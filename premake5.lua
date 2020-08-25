@@ -1,6 +1,6 @@
 workspace "Yugo"
     architecture "x64"
-    startproject "Playground"
+    startproject "Main"
 
     configurations
     {
@@ -107,8 +107,8 @@ project "Yugo"
         runtime "Release"
         optimize "On"
 
-project "Playground"
-        location "Playground"
+project "Main"
+        location "Main"
         kind "ConsoleApp"
         language "C++"
         cppdialect "C++17"
@@ -127,6 +127,7 @@ project "Playground"
         {
             "Yugo/src",
             "Yugo/vendor",
+            "GameLogic",
             "%{IncludeDir.GLFW}",
             "%{IncludeDir.Glad}",
             "%{IncludeDir.Assimp}",

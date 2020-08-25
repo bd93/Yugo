@@ -316,10 +316,10 @@ namespace Yugo
 			if (selection == rootId)
 			{
 				nodeFlags |= ImGuiTreeNodeFlags_Selected;
-				currentPath = FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets";
+				currentPath = FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets";
 			}
 
-			std::string pathToFolder = FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets";
+			std::string pathToFolder = FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets";
 			auto folderTreeMap = FileSystem::HashFolderTree(pathToFolder);
 
 			bool rootNodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)rootId, nodeFlags, "Assets");
@@ -406,7 +406,7 @@ namespace Yugo
 			if (rootNodeOpen)
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()); // Increase spacing to differentiate leaves from expanded contents.
-				TraverseFolderTree(FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets");
+				TraverseFolderTree(FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets");
 
 				if (nodeClicked != 0)
 				{

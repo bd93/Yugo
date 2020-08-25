@@ -22,14 +22,14 @@ namespace Yugo
 	void Scene::OnStart()
 	{
 		Shader modelShader(
-			FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets\\Shaders\\model_vertex.shader",
-			FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets\\Shaders\\model_fragment.shader"
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\model_vertex.shader",
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\model_fragment.shader"
 		);
 		ResourceManager::AddShader("modelShader", modelShader);
 
 		Shader animatedModelShader (
-			FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets\\Shaders\\vertexAnimation.shader",
-			FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets\\Shaders\\model_fragment.shader"
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\vertexAnimation.shader",
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\model_fragment.shader"
 			);
 		ResourceManager::AddShader("animatedModelShader", animatedModelShader);
 

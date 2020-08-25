@@ -8,7 +8,7 @@ bin-int/
 **.json
 
 # Folders
-Playground/src/Assets
+Main/src/Assets
 
 # Visual Studio
 .vs/

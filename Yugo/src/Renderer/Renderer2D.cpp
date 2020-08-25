@@ -63,20 +63,20 @@ namespace Yugo
 	void Renderer2D::Init()
 	{
 		Shader quadShader(
-			FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets\\Shaders\\vertex2d.shader",
-			FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets\\Shaders\\fragment2d.shader"
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\vertex2d.shader",
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\fragment2d.shader"
 		);
 
 		ResourceManager::AddShader("quadShader", quadShader);
 
 		Shader texturedQuadShader(
-			FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets\\Shaders\\vertex2d_textured.shader",
-			FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets\\Shaders\\fragment2d_textured.shader"
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\vertex2d_textured.shader",
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\fragment2d_textured.shader"
 		);
 
 		ResourceManager::AddShader("texturedQuadShader", texturedQuadShader);
 
-		Texture texture(FileSystem::GetSolutionFolderPath() + "Playground\\src\\Assets\\Textures\\awesomeface.png");
+		Texture texture(FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Textures\\awesomeface.png");
 
 		ResourceManager::AddTexture("awesomeface", texture);
 
