@@ -1,0 +1,18 @@
+# Binaries
+**/bin/
+bin-int/
+
+# Files
+**.log
+**.ini
+**.json
+
+# Folders
+Playground/src/Assets
+
+# Visual Studio
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user

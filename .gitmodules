@@ -1,0 +1,12 @@
+[submodule "Yugo/vendor/GLFW"]
+	path = Yugo/vendor/GLFW
+	url = https://github.com/bd93/glfw.git
+[submodule "Yugo/vendor/imgui"]
+	path = Yugo/vendor/imgui
+	url = https://github.com/bd93/imgui.git
+[submodule "Yugo/vendor/ImGuizmo"]
+	path = Yugo/vendor/ImGuizmo
+	url = https://github.com/bd93/ImGuizmo.git
+[submodule "Yugo/vendor/glm"]
+	path = Yugo/vendor/glm
+	url = https://github.com/g-truc/glm.git
