@@ -62,6 +62,7 @@ project "Yugo"
 
     includedirs
     {
+        "GameLogic",
         "%{prj.name}/src",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.Glad}",
