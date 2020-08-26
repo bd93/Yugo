@@ -7,7 +7,7 @@
 namespace Yugo
 {
 
-	static std::unordered_map<std::string, Entity*> s_ScriptEntityMap; // TODO: Pravi problem kod ponobnog pokretanja skripte jer se brise ScrBeh prilikom OnShutdown
+	static std::unordered_map<std::string, Entity*> s_ScriptEntityMap;
 
 	void Yugo::ScriptEngine::OnStart()
 	{
