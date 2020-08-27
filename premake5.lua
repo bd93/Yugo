@@ -114,6 +114,8 @@ project "Main"
         cppdialect "C++17"
         staticruntime "On"
 
+        prebuildcommands { "xcopy /y /d %{wks.location}Yugo\\vendor\\Assimp\\lib\\assimp-vc142-mtd.dll %{wks.location}\\bin\\Debug-windows-x86_64\\Main" }
+
         targetdir ("bin/" .. outputdir .. "/%{prj.name}")
         objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
@@ -175,13 +177,15 @@ project "GameLogic"
         cppdialect "C++17"
         staticruntime "On"
 
+        postbuildcommands { "xcopy /y /d %{wks.location}bin\\Debug-windows-x86_64\\GameLogic\\GameLogic.dll %{wks.location}\\bin\\Debug-windows-x86_64\\Main" }
+       
         targetdir ("bin/" .. outputdir .. "/%{prj.name}")
         objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
         files
         {
-            "%{prj.name}/src/**.h",
-            "%{prj.name}/src/**.cpp"
+            "%{prj.name}/**.h",
+            "%{prj.name}/**.cpp"
         }
     
         includedirs
