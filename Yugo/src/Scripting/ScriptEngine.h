@@ -1,7 +1,7 @@
 #pragma once
 #include "Scene/Entity.h"
 #include "Script.h"
-#include "ScriptBehaviour.h"
+#include "ScriptInterfaceImpl.h"
 
 #include <Windows.h>
 
@@ -31,7 +31,7 @@ namespace Yugo
 	private:
 		HINSTANCE m_Lib;
 		ScriptArray m_ScriptArray;
-		ScriptBehaviour* m_ScriptBehaviour;
+		ScriptInterfaceImpl* m_ScriptInterfaceImpl;
 		std::unordered_map<std::string, Entity*> m_ScriptEntityMap;
 	};
 }

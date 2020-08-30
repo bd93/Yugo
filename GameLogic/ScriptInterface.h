@@ -8,11 +8,9 @@ This class represents interface for accessing game engine functionalities;
 Each client script holds pointer to this interface;
 Methods are overridden on the game engine side;
 */
-class Behaviour
+class ScriptInterface
 {
 public:
-	virtual ~Behaviour() {}
-
 	virtual bool IsKeyboardkeyPressed(Yugo::KeyCode key) = 0;
 	virtual bool IsMouseButtonPressed(Yugo::MouseCode button) = 0;
 

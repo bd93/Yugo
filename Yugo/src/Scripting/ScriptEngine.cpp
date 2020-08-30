@@ -1,7 +1,6 @@
 #include "pch.h"
 
 #include "ScriptEngine.h"
-#include "GameObjectImpl.h"
 
 
 namespace Yugo
@@ -27,10 +26,10 @@ namespace Yugo
 
 		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
 		{
-			m_ScriptBehaviour = new ScriptBehaviour();
+			m_ScriptInterfaceImpl = new ScriptInterfaceImpl();
 			auto entity = m_ScriptEntityMap[m_ScriptArray.Scripts[i]->GetScriptFilePath()];
-			m_ScriptBehaviour->SetEntity(entity);
-			m_ScriptArray.Scripts[i]->SetBehaviour(m_ScriptBehaviour);
+			m_ScriptInterfaceImpl->SetEntity(entity);
+			m_ScriptArray.Scripts[i]->SetScriptInterface(m_ScriptInterfaceImpl);
 		}
 
 		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
@@ -50,7 +49,7 @@ namespace Yugo
 
 	void ScriptEngine::OnStop()
 	{
-		delete m_ScriptBehaviour;
+		delete m_ScriptInterfaceImpl;
 
 		DeleteScripts DestroyScripts = (DeleteScripts)GetProcAddress(m_Lib, "DeleteScripts");
 		if (DestroyScripts == NULL)

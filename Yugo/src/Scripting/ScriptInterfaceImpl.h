@@ -1,12 +1,12 @@
 #pragma once
-#include "Behaviour.h"
+#include "ScriptInterface.h"
 
 
 
 namespace Yugo
 {
 
-	class ScriptBehaviour : public Behaviour
+	class ScriptInterfaceImpl : public ScriptInterface
 	{
 	public:
 		virtual bool IsKeyboardkeyPressed(Yugo::KeyCode key) override;
