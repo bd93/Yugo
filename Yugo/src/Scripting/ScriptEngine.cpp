@@ -1,13 +1,17 @@
 #include "pch.h"
 
 #include "ScriptEngine.h"
-#include "ScriptBehaviour.h"
+#include "GameObjectImpl.h"
 
 
 namespace Yugo
 {
 
-	static std::unordered_map<std::string, Entity*> s_ScriptEntityMap;
+	ScriptEngine::~ScriptEngine()
+	{
+		for (auto scriptEntityPair : m_ScriptEntityMap)
+			delete scriptEntityPair.second;
+	}
 
 	void Yugo::ScriptEngine::OnStart()
 	{
@@ -19,39 +23,40 @@ namespace Yugo
 		if (NewScripts == NULL)
 			std::cout << "Cannot load CreateScripts function!\n";
 
-		m_Scripts = NewScripts();
+		m_ScriptArray = NewScripts();
 
-		for (auto script : m_Scripts)
+		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
 		{
-			ScriptBehaviour* scriptBehaviour = new ScriptBehaviour();
-			auto& entity = s_ScriptEntityMap[script->GetScriptFilePath()];
-			scriptBehaviour->SetEntity(entity);
-			script->SetBehaviour(scriptBehaviour);
+			m_ScriptBehaviour = new ScriptBehaviour();
+			auto entity = m_ScriptEntityMap[m_ScriptArray.Scripts[i]->GetScriptFilePath()];
+			m_ScriptBehaviour->SetEntity(entity);
+			m_ScriptArray.Scripts[i]->SetBehaviour(m_ScriptBehaviour);
 		}
+
+		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
+			m_ScriptArray.Scripts[i]->OnStart();
 	}
 
 	void Yugo::ScriptEngine::OnUpdate(float ts)
 	{
-		for (auto script : m_Scripts)
-			script->OnUpdate(ts);
+		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
+			m_ScriptArray.Scripts[i]->OnUpdate(ts);
 	}
 
 	void Yugo::ScriptEngine::OnShutdown()
 	{
-
-		// TODO: Implement all cases in order to fix a bug!
-		
-		DeleteScripts DestroyScripts = (DeleteScripts)GetProcAddress(m_Lib, "DeleteScripts");
-		if (DestroyScripts == NULL)
-			std::cout << "Cannot load DeleteScripts function!\n";
-		
-		DestroyScripts();
-
-		FreeLibrary(m_Lib);
+		// TODO: Implement case when user close window without clicking on play scene and stop scene buttons
 	}
 
 	void ScriptEngine::OnStop()
 	{
+		delete m_ScriptBehaviour;
+
+		DeleteScripts DestroyScripts = (DeleteScripts)GetProcAddress(m_Lib, "DeleteScripts");
+		if (DestroyScripts == NULL)
+			std::cout << "Cannot load DeleteScripts function!\n";
+		DestroyScripts(m_ScriptArray);
+		
 		FreeLibrary(m_Lib);
 	}
 
@@ -64,7 +69,7 @@ namespace Yugo
 
 	void ScriptEngine::AttachScript(const std::string& scriptFilePath, Entity* entity)
 	{
-		s_ScriptEntityMap[scriptFilePath] = entity;
+		m_ScriptEntityMap[scriptFilePath] = entity;
 	}
 
 }

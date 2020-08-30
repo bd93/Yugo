@@ -728,16 +728,7 @@ namespace Yugo
 		if (ImGui::Button("Play Scene"))
 		{
 			s_PlayMode = true;
-			static bool first = true;
-			if (first)
-			{
-				m_ScriptEngine->OnStart();
-				first = false;
-			}
-			else
-			{
-				m_ScriptEngine->OnReload();
-			}
+			m_ScriptEngine->OnStart();
 		}
 
 		ImGui::SameLine();

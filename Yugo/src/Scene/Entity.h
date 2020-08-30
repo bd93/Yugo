@@ -23,6 +23,7 @@ namespace Yugo
 
 		const std::string& GetName() const;
 		const uint32_t GetEntityId() const;
+		Scene* GetScene(); // TEMPORARY!!!
 
 	private:
 		entt::entity m_EntityHandle;

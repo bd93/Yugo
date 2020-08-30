@@ -39,6 +39,9 @@ namespace Yugo
 		bool IsAnyMeshSelected();
 		TransformComponent& GetSelectedMeshTransform();
 
+		// TEMPORARY!!!
+		entt::registry& GetRegistry();
+
 	private:
 		entt::registry m_Registry; // Registry is kind of in-memory database storage for entities and components
 		entt::entity m_SelectedEntity; // Entity which is selected with mouse ray, on left click

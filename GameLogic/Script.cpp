@@ -11,16 +11,33 @@ std::vector<Script*>& Script::GetClientScripts()
 
 extern "C"
 {
-	SCRIPT_API std::vector<Script*> CreateScripts()
+
+	SCRIPT_API ScriptArray CreateScripts()
 	{
-		return Script::GetClientScripts();
+		auto& clientScripts = Script::GetClientScripts();
+		auto numOfClientScripts = clientScripts.size();
+		Script** scripts = new Script*[numOfClientScripts];
+		size_t i = 0;
+		for (auto clientScript : clientScripts)
+			scripts[i++] = clientScript;
+
+		ScriptArray scriptArray;
+		scriptArray.Scripts = scripts;
+		scriptArray.Size = numOfClientScripts;
+		return scriptArray;
 	}
 
-	SCRIPT_API void DeleteScripts()
+	SCRIPT_API void DeleteScripts(ScriptArray scriptArray)
 	{
-		auto& scripts = Script::GetClientScripts();
-		for (auto script : scripts)
-			delete script;
+		auto scripts = scriptArray.Scripts;
+		auto& clientScripts = Script::GetClientScripts();
+		size_t i = 0;
+		for (auto clientScript : clientScripts)
+		{
+			scripts[i] = nullptr;
+			delete scripts[i++];
+			delete clientScript;
+		}
 	}
 
 }

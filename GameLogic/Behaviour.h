@@ -11,7 +11,7 @@ Methods are overridden on the game engine side;
 class Behaviour
 {
 public:
-	virtual ~Behaviour() { delete m_Entity; }
+	virtual ~Behaviour() {}
 
 	virtual bool IsKeyboardkeyPressed(Yugo::KeyCode key) = 0;
 	virtual bool IsMouseButtonPressed(Yugo::MouseCode button) = 0;
@@ -26,7 +26,4 @@ public:
 	virtual bool HasTransformComponent() = 0;
 	virtual bool HasMeshComponent() = 0;
 	virtual bool HasAnimationComponent() = 0;
-
-protected:
-	Yugo::Entity* m_Entity; // Game object
 };

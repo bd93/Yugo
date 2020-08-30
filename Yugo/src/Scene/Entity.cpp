@@ -22,4 +22,9 @@ namespace Yugo
 		return static_cast<uint32_t>(m_EntityHandle);
 	}
 
+	Scene* Entity::GetScene()
+	{
+		return m_Scene;
+	}
+
 }

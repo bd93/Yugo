@@ -22,6 +22,9 @@ namespace Yugo
 		virtual bool HasTransformComponent() override;
 		virtual bool HasMeshComponent() override;
 		virtual bool HasAnimationComponent() override;
+
+	private:
+		Yugo::Entity* m_Entity; // Game object which script is attached to
 	};
 
 }

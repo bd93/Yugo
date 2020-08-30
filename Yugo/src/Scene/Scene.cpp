@@ -290,4 +290,10 @@ namespace Yugo
 		}
 	}
 
+	// TEMPORARY!!!
+	entt::registry& Scene::GetRegistry()
+	{
+		return m_Registry;
+	}
+
 }
