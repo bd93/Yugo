@@ -61,7 +61,7 @@ namespace Yugo
 		CreateFrameBuffer(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 
 		m_Scene->OnStart();
-		//m_ScriptEngine->OnStart();
+		m_ScriptEngine->SetScene(m_Scene.get()); // TODO: Think about better solution!
 
 		Dispatcher::Subscribe<MouseButtonPress>(this);
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
@@ -600,7 +600,7 @@ namespace Yugo
 					auto& entityTagComponent = m_Scene->m_Registry.get<EntityTagComponent>(m_Scene->m_SelectedEntity);
 
 					scriptComponent.ScriptFilePath = scriptFilePath;
-					Entity* entity = new Entity(m_Scene->m_SelectedEntity, entityTagComponent.Name, m_Scene.get());
+					Entity entity(m_Scene->m_SelectedEntity, entityTagComponent.Name, m_Scene.get());
 					m_ScriptEngine->AttachScript(scriptFilePath, entity);
 				}
 			}

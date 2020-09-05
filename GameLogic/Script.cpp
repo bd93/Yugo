@@ -2,6 +2,9 @@
 #include "Script.h"
 
 
+#define SCRIPT_API __declspec(dllexport)
+
+
 std::vector<Script*>& Script::GetClientScripts() 
 { 
 	static std::vector<Script*> scripts;

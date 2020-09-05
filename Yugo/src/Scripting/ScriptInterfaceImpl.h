@@ -1,6 +1,6 @@
 #pragma once
 #include "ScriptInterface.h"
-
+#include "GameObject.h"
 
 
 namespace Yugo
@@ -12,19 +12,20 @@ namespace Yugo
 		virtual bool IsKeyboardkeyPressed(Yugo::KeyCode key) override;
 		virtual bool IsMouseButtonPressed(Yugo::MouseCode button) override;
 
-		virtual Yugo::Entity* GetEntity() override;
-		virtual void SetEntity(Yugo::Entity* entity) override;
+		virtual Yugo::Entity& GetEntity() override;
+		virtual void SetEntity(Yugo::Entity& entity) override;
 
-		virtual Yugo::TransformComponent& GetTransformComponent() override;
-		virtual Yugo::MeshComponent& GetMeshComponent() override;
-		virtual Yugo::AnimationComponent& GetAnimationComponent() override;
+		virtual TransformComponent& GetTransformComponent() override;
+		virtual MeshComponent& GetMeshComponent() override;
+		virtual AnimationComponent& GetAnimationComponent() override;
+		virtual EntityTagComponent& GetEntityTagComponent() override;
 
 		virtual bool HasTransformComponent() override;
 		virtual bool HasMeshComponent() override;
 		virtual bool HasAnimationComponent() override;
 
 	private:
-		Yugo::Entity* m_Entity; // Game object which script is attached to
+		Entity m_Entity;
 	};
 
 }

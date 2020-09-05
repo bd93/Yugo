@@ -1,8 +1,6 @@
 #pragma once
 #include "ScriptInterface.h"
-
-
-#define SCRIPT_API __declspec(dllexport)
+#include "GameObject.h"
 
 
 /*
@@ -20,7 +18,7 @@ public:
 	virtual void OnShutdown() = 0;
 
 	void SetScriptInterface(ScriptInterface* scriptInterface) { m_ScriptInterface = scriptInterface; }
-	Yugo::Entity* GetEntity() { return m_ScriptInterface->GetEntity(); }
+	void SetGameObject(GameObject* gameObject) { m_GameObject = gameObject; }
 	const std::string& GetScriptFilePath() { return m_ScriptFilePath; }
 	
 	bool IsKeyboardkeyPressed(Yugo::KeyCode key) { return m_ScriptInterface->IsKeyboardkeyPressed(key); }
@@ -37,6 +35,9 @@ public:
 
 	template<>
 	Yugo::AnimationComponent& GetComponent<Yugo::AnimationComponent>() { return m_ScriptInterface->GetAnimationComponent(); }
+
+	template<>
+	Yugo::EntityTagComponent& GetComponent<Yugo::EntityTagComponent>() { return m_ScriptInterface->GetEntityTagComponent(); }
 
 	template<typename T>
 	bool HasComponent() {}
@@ -60,8 +61,7 @@ public:
 
 protected:
 	ScriptInterface* m_ScriptInterface;
-	//IGameObject* m_GameObject; // TEMPORARY!!!
-	uint32_t m_EntityId;
+	GameObject* m_GameObject; // Game object which this script is attached to
 	std::string m_ScriptFilePath;
 };
 

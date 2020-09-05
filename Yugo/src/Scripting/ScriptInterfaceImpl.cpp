@@ -5,54 +5,60 @@
 namespace Yugo
 {
 
-	bool ScriptInterfaceImpl::IsKeyboardkeyPressed(Yugo::KeyCode key)
+	bool ScriptInterfaceImpl::IsKeyboardkeyPressed(KeyCode key)
 	{
 		return UserInput::IsKeyboardKeyPressed(key);
 	}
 
-	bool ScriptInterfaceImpl::IsMouseButtonPressed(Yugo::MouseCode button)
+	bool ScriptInterfaceImpl::IsMouseButtonPressed(MouseCode button)
 	{
 		return UserInput::IsMouseButtonPressed(button);
 	}
 
-	Yugo::Entity* ScriptInterfaceImpl::GetEntity()
+	Entity& ScriptInterfaceImpl::GetEntity()
 	{
 		return m_Entity;
 	}
 
-	void ScriptInterfaceImpl::SetEntity(Yugo::Entity* entity)
+	void ScriptInterfaceImpl::SetEntity(Entity& entity)
 	{
 		m_Entity = entity;
 	}
 
-	Yugo::TransformComponent& ScriptInterfaceImpl::GetTransformComponent()
+	TransformComponent& ScriptInterfaceImpl::GetTransformComponent()
 	{
-		return m_Entity->GetComponent<Yugo::TransformComponent>();
+		return m_Entity.GetComponent<TransformComponent>();
 	}
 
-	Yugo::MeshComponent& ScriptInterfaceImpl::GetMeshComponent()
+	MeshComponent& ScriptInterfaceImpl::GetMeshComponent()
 	{
-		return m_Entity->GetComponent<Yugo::MeshComponent>();
+		return m_Entity.GetComponent<MeshComponent>();
 	}
 
-	Yugo::AnimationComponent& ScriptInterfaceImpl::GetAnimationComponent()
+	AnimationComponent& ScriptInterfaceImpl::GetAnimationComponent()
 	{
-		return m_Entity->GetComponent<Yugo::AnimationComponent>();
+		return m_Entity.GetComponent<AnimationComponent>();
+	}
+
+	EntityTagComponent& ScriptInterfaceImpl::GetEntityTagComponent()
+	{
+		return m_Entity.GetComponent<EntityTagComponent>();
 	}
 
 	bool ScriptInterfaceImpl::HasTransformComponent()
 	{
-		return m_Entity->HasComponent<Yugo::TransformComponent>();
+		return m_Entity.HasComponent<TransformComponent>();
 	}
 
 	bool ScriptInterfaceImpl::HasMeshComponent()
 	{
-		return m_Entity->HasComponent<Yugo::MeshComponent>();
+		return m_Entity.HasComponent<MeshComponent>();
 	}
 
 	bool ScriptInterfaceImpl::HasAnimationComponent()
 	{
-		return m_Entity->HasComponent<Yugo::AnimationComponent>();
+		return m_Entity.HasComponent<AnimationComponent>();
 	}
+
 
 }

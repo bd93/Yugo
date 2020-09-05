@@ -1,7 +1,8 @@
 #pragma once
-#include "Scene/Entity.h" // TODO: Fix this! Try to implement something else because of possible circular dep.
+#include "Scene/Entity.h"
 #include "Animation/AnimationComponent.h"
 #include "Scene/Components.h"
+#include "Components.h"
 
 /*
 This class represents interface for accessing game engine functionalities;
@@ -14,12 +15,13 @@ public:
 	virtual bool IsKeyboardkeyPressed(Yugo::KeyCode key) = 0;
 	virtual bool IsMouseButtonPressed(Yugo::MouseCode button) = 0;
 
-	virtual Yugo::Entity* GetEntity() = 0;
-	virtual void SetEntity(Yugo::Entity* entity) = 0;
+	virtual Yugo::Entity& GetEntity() = 0;
+	virtual void SetEntity(Yugo::Entity& entity) = 0;
 
-	virtual Yugo::TransformComponent& GetTransformComponent() = 0;
-	virtual Yugo::MeshComponent& GetMeshComponent() = 0;
-	virtual Yugo::AnimationComponent& GetAnimationComponent() = 0;
+	virtual TransformComponent& GetTransformComponent() = 0;
+	virtual MeshComponent& GetMeshComponent() = 0;
+	virtual AnimationComponent& GetAnimationComponent() = 0;
+	virtual EntityTagComponent& GetEntityTagComponent() = 0;
 
 	virtual bool HasTransformComponent() = 0;
 	virtual bool HasMeshComponent() = 0;
