@@ -22,7 +22,7 @@ namespace Yugo
 		void RemoveComponent();
 
 		const std::string& GetName() const;
-		const uint32_t GetEntityId() const;
+		const entt::entity GetEnttEntity() const;
 		Scene* GetScene(); // TEMPORARY!!!
 
 	private:

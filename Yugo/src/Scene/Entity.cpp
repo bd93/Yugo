@@ -17,9 +17,9 @@ namespace Yugo
 		return m_Name;
 	}
 
-	const uint32_t Entity::GetEntityId() const
+	const entt::entity Entity::GetEnttEntity() const
 	{
-		return static_cast<uint32_t>(m_EntityHandle);
+		return m_EntityHandle;
 	}
 
 	Scene* Entity::GetScene()

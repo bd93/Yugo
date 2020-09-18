@@ -9,6 +9,7 @@
 namespace Yugo
 {
 	class Entity;
+	class UserInterface;
 
 	/*
 	This class represents renderable scene;
@@ -19,7 +20,8 @@ namespace Yugo
 	class Scene
 	{
 		friend class Entity;
-		friend class Editor;
+		friend class Editor; // World editor UI
+		friend class UserInterface; // Game UI
 	
 	public:
 		Scene();

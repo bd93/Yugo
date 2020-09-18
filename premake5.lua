@@ -26,6 +26,7 @@ IncludeDir["glm"] = "Yugo/vendor/glm"
 IncludeDir["entt"] = "Yugo/vendor/entt"
 IncludeDir["stb_image"] = "Yugo/vendor/stb_image"
 IncludeDir["json"] = "Yugo/vendor/json"
+IncludeDir["freetype"] = "Yugo/vendor/freetype/include"
 
 group "Dependencies"
     include "Yugo/vendor/GLFW"
@@ -57,7 +58,8 @@ project "Yugo"
         "%{prj.name}/vendor/glm/glm/**.hpp",
         "%{prj.name}/vendor/glm/glm/**.inl",
         "%{prj.name}/vendor/entt/**.hpp",
-        "%{prj.name}/vendor/json/**.hpp"
+        "%{prj.name}/vendor/json/**.hpp",
+        "%{prj.name}/vendor/freetype/**.h"
     }
 
     includedirs
@@ -72,7 +74,8 @@ project "Yugo"
         "%{IncludeDir.glm}",
         "%{IncludeDir.entt}",
         "%{IncludeDir.stb_image}",
-        "%{IncludeDir.json}"
+        "%{IncludeDir.json}",
+        "%{IncludeDir.freetype}"
     }
 
     links
@@ -114,7 +117,11 @@ project "Main"
         cppdialect "C++17"
         staticruntime "On"
 
-        prebuildcommands { "xcopy /y /d %{wks.location}Yugo\\vendor\\Assimp\\lib\\assimp-vc142-mtd.dll %{wks.location}\\bin\\Debug-windows-x86_64\\Main" }
+        prebuildcommands 
+        { 
+            "xcopy /y /d %{wks.location}Yugo\\vendor\\Assimp\\lib\\assimp-vc142-mtd.dll %{wks.location}\\bin\\Debug-windows-x86_64\\Main", 
+            "xcopy /y /d %{wks.location}Yugo\\vendor\\freetype\\lib\\freetype.dll %{wks.location}\\bin\\Debug-windows-x86_64\\Main" 
+        }
 
         targetdir ("bin/" .. outputdir .. "/%{prj.name}")
         objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -138,18 +145,21 @@ project "Main"
             "%{IncludeDir.glm}",
             "%{IncludeDir.entt}",
             "%{IncludeDir.stb_image}",
-            "%{IncludeDir.json}"
+            "%{IncludeDir.json}",
+            "%{IncludeDir.freetype}"
         }
 
         libdirs
         {
-            "Yugo/vendor/Assimp/lib"
+            "Yugo/vendor/Assimp/lib",
+            "Yugo/vendor/freetype/lib"
         }
 
         links
         {
             "Yugo",
-            "assimp-vc142-mtd.lib"
+            "assimp-vc142-mtd.lib",
+            "freetype.lib"
         }
     
         filter "system:windows"
@@ -200,18 +210,21 @@ project "GameLogic"
             "%{IncludeDir.glm}",
             "%{IncludeDir.entt}",
             "%{IncludeDir.stb_image}",
-            "%{IncludeDir.json}"
+            "%{IncludeDir.json}",
+            "%{IncludeDir.freetype}"
         }
 
         libdirs
         {
-            "Yugo/vendor/Assimp/lib"
+            "Yugo/vendor/Assimp/lib",
+            "Yugo/vendor/freetype/lib"
         }
 
         links
         {
             "Yugo",
-            "assimp-vc142-mtd.lib"
+            "assimp-vc142-mtd.lib",
+            "freetype.lib"
         }
     
         filter "system:windows"

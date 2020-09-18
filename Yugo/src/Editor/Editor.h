@@ -4,6 +4,7 @@
 #include "Events/Event.h"
 #include "Core/Window.h"
 #include "Scripting/ScriptEngine.h"
+#include "UI/UserInterface.h"
 
 #include <imgui.h>
 #include <examples/imgui_impl_glfw.h>
@@ -29,6 +30,7 @@ namespace Yugo
 		// Flags
 		bool m_IsSceneWindowFocused;
 		bool m_IsSceneWindowHovered;
+		entt::entity m_SelectedSceneEntity;
 
 		// Scene Framebuffer info (visible scene texture inside Scene ImGui window)
 		struct SceneInfo
@@ -53,7 +55,8 @@ namespace Yugo
 		MouseInfo m_MouseInfo;
 
 		sPtr<Scene> m_Scene;
-		uPtr<ScriptEngine> m_ScriptEngine;
+		sPtr<UserInterface> m_UserInterface;
+		uPtr<ScriptEngine> m_ScriptEngine; // TODO: consider changing to sPtr
 
 		/*
 		Active scene will be rendered in FrameBuffer;
@@ -72,10 +75,14 @@ namespace Yugo
 		void ShowImGuizmoWidget(TransformComponent& transform, const glm::mat4& projectionMatrix, const glm::mat4& viewMatrix);
 		void ShowFileDialogBox(const std::string& option, std::string& fullPath);
 		void ShowFolderMenuPopup(const std::string& folderPath);
+		void ShowHierarchyMenuPopup(entt::entity node);
 
 		void CreateFrameBuffer(int width, int height);
 		void BindFrameBuffer();
 		void UnbindFrameBuffer();
+
+		void ImportAsset(const std::string& importAssetFilePath);
+		void SelectMesh();
 
 		void UpdateSceneViewport(float sceneWindowWidth, float sceneWindowHeight);
 	};

@@ -8,6 +8,8 @@
 #include "Animation/Animation.h"
 #include "Serializer/Serializer.h"
 #include "Scripting/ScriptComponent.h"
+#include "Renderer/SpriteRenderer.h"
+#include "UI/UserInterface.h"
 
 
 namespace Yugo
@@ -41,88 +43,10 @@ namespace Yugo
 
 	void Scene::OnEvent(const Event& event)
 	{
-		// Import asset event is invoked when user drag and drop asset to scene imgui window 
-		if (event.GetEventType() == EventType::ImportAsset)
-		{
-			const auto& importAssetEvent = static_cast<const ImportAssetEvent&>(event);
-			const auto& importAssetFilePath = importAssetEvent.GetAssetFilePath();
-			auto& [loadedMesh, loadedAnimation] = ModelImporter::LoadMeshFile(importAssetFilePath);
-
-			auto meshEntity = CreateEntity();
-
-			auto& entityTag = meshEntity.AddComponent<EntityTagComponent>(importAssetFilePath);
-			auto& mesh = meshEntity.AddComponent<MeshComponent>(*loadedMesh);
-			auto& transform = meshEntity.AddComponent<TransformComponent>();
-			meshEntity.AddComponent<BoundBoxComponent>(*loadedMesh);
-			if (loadedMesh->HasAnimation)	
-				auto& animation = meshEntity.AddComponent<AnimationComponent>(*loadedAnimation);
-
-			transform.ModelMatrix = glm::mat4(1.0f);
-
-			// Check if mouse ray intersects ground plane
-			if (m_MouseRay.CheckCollisionWithPlane())
-			{
-				// Place asset on the intersection point
-				const glm::vec3& intersectionPoint = m_MouseRay.GetIntersectionPoint();
-				transform.ModelMatrix = glm::translate(transform.ModelMatrix, intersectionPoint);
-				transform.Position = intersectionPoint;
-			}
-			else
-			{
-				// Place asset on the origin point of world coordinate system
-				transform.ModelMatrix = glm::translate(transform.ModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
-				transform.Position = glm::vec3(0.0f, 0.0f, 0.0f);
-			}
-
-			transform.ModelMatrix = glm::scale(transform.ModelMatrix, glm::vec3(10.0f, 10.0f, 10.0f));
-			transform.Scale = glm::vec3(10.0f, 10.0f, 10.0f);
-			
-			MeshRenderer::Submit(mesh);
-		}
-
 		if (event.GetEventType() == EventType::MouseButtonPress)
 		{
-			auto view = m_Registry.view<MeshComponent, TransformComponent, BoundBoxComponent>();
 
-			bool isAnyMeshSelected = false;
-			int intersectionDistance = -1; // Initialize with -1 which means no mesh is selected
-			for (auto entity : view)
-			{
-				const auto& [mesh, transform] = view.get<MeshComponent, TransformComponent>(entity);
-				
-				// Check if mouse ray intersects mesh (model)
-				if (m_MouseRay.CheckCollisionWithBox(mesh, transform))
-				{
-					isAnyMeshSelected = true;
-					if (intersectionDistance == -1)
-					{
-						// Check if mouse ray intersects any triangle in mesh
-						if (m_MouseRay.CheckCollisionWithMesh(mesh, transform))
-						{
-							intersectionDistance = (int)m_MouseRay.GetCollisionDistance();
-							m_SelectedEntity = entity;
-						}
-					}
-					// In case mesh is behind slected mesh
-					if (intersectionDistance < (int)m_MouseRay.GetCollisionDistance())
-						continue;
-					if (intersectionDistance > (int)m_MouseRay.GetCollisionDistance())
-					{
-						// Check if mouse ray intersects any triangle in mesh
-						if (m_MouseRay.CheckCollisionWithMesh(mesh, transform))
-						{
-							intersectionDistance = (int)m_MouseRay.GetCollisionDistance();
-							m_SelectedEntity = entity;
-						}
-					}
-				}
-			}
-			if (!isAnyMeshSelected)
-				m_SelectedEntity = entt::null;
 		}
-
-		if (event.GetEventType() == EventType::MouseScroll)
-			m_Camera->OnEvent(event);
 	}
 
 	void Scene::OnUpdate(float ts)
@@ -198,6 +122,15 @@ namespace Yugo
 				//}
 			}
 		}
+
+		//{
+		//	auto view = m_Registry.view<SpriteComponent, TransformComponent>();
+		//	for (auto entity : view)
+		//	{
+		//		auto& [sprite, transform] = view.get<SpriteComponent, TransformComponent>(entity);
+		//		SpriteRenderer::Render(sprite, transform, ResourceManager::GetShader("uiShader"));
+		//	}
+		//}
 	}
 
 	void Scene::OnShutdown()

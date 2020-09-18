@@ -5,6 +5,10 @@
 
 namespace Yugo
 {
+	glm::vec3 MouseRay::s_MouseRayOrigin = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 MouseRay::s_MouseRayDirection = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 MouseRay::s_MouseEyeSpaceCoords = glm::vec3(0.0f, 0.0f, 0.0f);
+	float MouseRay::s_MouseRayCollisionDistance = 0.0f;
 
 	void MouseRay::CalculateRayOrigin(const sPtr<Camera>& camera, float mousePosX, float mousePosY, int sceneWidth, int sceneHeight)
 	{
@@ -24,8 +28,10 @@ namespace Yugo
 		// Transform eye space coords to world coords
 		glm::vec4 worldCoords = glm::inverse(view) * eyeCoords;
 
-		m_MouseRayOrigin = glm::vec3(worldCoords.x, worldCoords.y, worldCoords.z);
-		m_MouseRayDirection = camera->GetDirection();
+		s_MouseEyeSpaceCoords = glm::vec3(eyeCoords.x, eyeCoords.y, 0.0f); // Only for UI widgets purpose
+
+		s_MouseRayOrigin = glm::vec3(worldCoords.x, worldCoords.y, worldCoords.z);
+		s_MouseRayDirection = camera->GetDirection();
 	}
 
 	/*
@@ -36,14 +42,14 @@ namespace Yugo
 	{
 		glm::vec3 faceNormal = glm::vec3(0.0f, 1.0f, 0.0f);
 
-		float denom = glm::dot(faceNormal, m_MouseRayDirection);
+		float denom = glm::dot(faceNormal, s_MouseRayDirection);
 		if (std::abs(denom) <= 1e-4f)
 			return false;
 		// 0.0f is "Y" position of ground plane
-		float t = (0.0f - glm::dot(faceNormal, m_MouseRayOrigin)) / glm::dot(faceNormal, m_MouseRayDirection);
+		float t = (0.0f - glm::dot(faceNormal, s_MouseRayOrigin)) / glm::dot(faceNormal, s_MouseRayDirection);
 		if (t <= 1e-4f)
 			return false;
-		m_MouseRayCollisionDistance = t;
+		s_MouseRayCollisionDistance = t;
 		return true;
 	}
 
@@ -58,8 +64,8 @@ namespace Yugo
 		glm::vec3 minAABB = model * glm::vec4(mesh.MinAABB, 1.0f);
 		glm::vec3 maxAABB = model * glm::vec4(mesh.MaxAABB, 1.0f);
 
-		glm::vec3 tminVec = (minAABB - m_MouseRayOrigin) / m_MouseRayDirection;
-		glm::vec3 tmaxVec = (maxAABB - m_MouseRayOrigin) / m_MouseRayDirection;
+		glm::vec3 tminVec = (minAABB - s_MouseRayOrigin) / s_MouseRayDirection;
+		glm::vec3 tmaxVec = (maxAABB - s_MouseRayOrigin) / s_MouseRayDirection;
 
 		if (tminVec.x > tmaxVec.x) std::swap(tminVec.x, tmaxVec.x);
 		if (tminVec.y > tmaxVec.y) std::swap(tminVec.y, tmaxVec.y);
@@ -85,7 +91,7 @@ namespace Yugo
 
 		t = tmin;
 
-		m_MouseRayCollisionDistance = t;
+		s_MouseRayCollisionDistance = t;
 
 		return true;
 	}
@@ -124,7 +130,7 @@ namespace Yugo
 				/* Step 1: Finding P */
 
 				// Check if ray and plane are parallel
-				float nDotRayDirection = glm::dot(n, m_MouseRayDirection);
+				float nDotRayDirection = glm::dot(n, s_MouseRayDirection);
 				if (std::abs(nDotRayDirection) < 1e-4f) // Almost 0 
 					continue; // They are parallel so they don't intersect
 
@@ -132,12 +138,12 @@ namespace Yugo
 				float d = glm::dot(n, v0);
 
 				// Compute t (IMPORTANT: for some reason it needs to be "d - glm::dot" instead of "d + glm::dot"?)
-				float t = (-glm::dot(n, m_MouseRayOrigin) + d) / nDotRayDirection;
+				float t = (-glm::dot(n, s_MouseRayOrigin) + d) / nDotRayDirection;
 				// Check if the triangle is in behind the ray
 				if (t < 0) continue; // The triangle is behind 
 
 				// Compute the intersection point
-				glm::vec3 p = m_MouseRayOrigin + t * m_MouseRayDirection;
+				glm::vec3 p = s_MouseRayOrigin + t * s_MouseRayDirection;
 
 				/* Step 2: Inside-outside test */
 
@@ -167,14 +173,33 @@ namespace Yugo
 		return false;
 	}
 
+	bool MouseRay::CheckCollisionWithSprite(const SpriteComponent& sprite, const TransformComponent& transform)
+	{
+		float spritePosX = transform.Position.x;
+		float spritePosY = transform.Position.y;
+
+		float spriteWidth = transform.Scale.x;
+		float spriteHeight = transform.Scale.y;
+
+		float edgeY1 = spritePosY;
+		float edgeY2 = spritePosY - spriteHeight;
+		float edgeX1 = spritePosX;
+		float edgeX2 = spritePosX + spriteWidth;
+
+		if (s_MouseEyeSpaceCoords.x > edgeX1 && s_MouseEyeSpaceCoords.x < edgeX2 && std::abs(s_MouseEyeSpaceCoords.y) > std::abs(edgeY1) && glm::abs(s_MouseEyeSpaceCoords.y) < glm::abs(edgeY2))
+			return true;
+		else
+			return false;
+	}
+
 	glm::vec3 MouseRay::GetIntersectionPoint()
 	{
-		return m_MouseRayOrigin + m_MouseRayCollisionDistance * m_MouseRayDirection;
+		return s_MouseRayOrigin + s_MouseRayCollisionDistance * s_MouseRayDirection;
 	}
 
 	float MouseRay::GetCollisionDistance()
 	{
-		return m_MouseRayCollisionDistance;
+		return s_MouseRayCollisionDistance;
 	}
 
 }

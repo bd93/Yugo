@@ -6,10 +6,45 @@
 #include "Renderer/Texture.h"
 
 #include <glm/glm.hpp>
+#include <entt/entt.hpp>
 
 
 namespace Yugo
 {
+
+	struct SpriteComponent
+	{
+		std::vector<Vertex1P1T> Vertices
+		{
+			/*
+
+			Texture coordinates:
+
+			0,0 ------------- 1,0
+				|			|
+				|			|
+				|			|
+			0,1	------------- 1,1
+
+			*/
+			{glm::vec3(1.0f,  0.0f, 0.0f), glm::vec2(1.0f, 0.0f)}, // Vertex 0
+			{glm::vec3(1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f)}, // Vertex 1
+			{glm::vec3(0.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f)}, // Vertex 2
+			{glm::vec3(0.0f,  0.0f, 0.0f), glm::vec2(0.0f, 0.0f)}  // Vertex 3
+		};
+		std::vector<uint32_t> Indices
+		{
+			0, 1, 3,
+			1, 2, 3
+		};
+
+		Texture Texture;
+		glm::vec4 Color;
+
+		sPtr<Buffer<Vertex1P1T>> VertexBuffer;
+		sPtr<Buffer<uint32_t>> IndexBuffer;
+		sPtr<VertexArray<Vertex1P1T>> ArrayOfVertices;
+	};
 
 	struct Material
 	{
@@ -184,4 +219,12 @@ namespace Yugo
 		EntityTagComponent() = default;
 		EntityTagComponent(const EntityTagComponent& other) = default;
 	};
+
+	struct RelationshipComponent
+	{
+		std::size_t NumOfChildren{ 0 };
+		std::vector<entt::entity> Children;
+		entt::entity Parent{entt::null};
+	};
+
 }
