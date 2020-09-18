@@ -248,7 +248,7 @@ namespace Yugo
 		m_Scene->OnUpdate(ts);
 		if (s_PlayMode)
 			m_UserInterface->OnUpdate(ts);
-		std::cout << ImGuizmo::IsUsing() << "\n";
+
 		// TEMPORARY!!!
 		if (s_PlayMode)
 		{
@@ -274,7 +274,7 @@ namespace Yugo
 			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
 			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT && m_IsSceneWindowHovered)
 			{
-				if (!ImGuizmo::IsUsing() && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL)) // TODO: fix this situation where specific keys needs to be negated!
+				if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL)) // TODO: fix this situation where specific keys needs to be negated!
 				{
 					MouseRay::CalculateRayOrigin(m_Scene->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 					SelectMesh();
@@ -715,6 +715,8 @@ namespace Yugo
 							{
 								nodeClicked = entityId;
 								m_SelectedSceneEntity = entity;
+								if (s_CurrentGizmoOperation == ImGuizmo::BOUNDS)
+									s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
 							}
 
 							if (ImGui::IsItemClicked(1))
@@ -738,6 +740,8 @@ namespace Yugo
 							{
 								nodeClicked = entityId;
 								m_SelectedSceneEntity = entity;
+								if (s_CurrentGizmoOperation == ImGuizmo::BOUNDS)
+									s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
 							}
 
 							if (ImGui::IsItemClicked(1))
@@ -1185,12 +1189,9 @@ namespace Yugo
 			// Check if mouse ray intersects mesh (model)
 			if (MouseRay::CheckCollisionWithBox(mesh, transform))
 			{
-				std::cout << "Collision with box\n";
 				// Check if mouse ray intersects any triangle in mesh
 				if (MouseRay::CheckCollisionWithMesh(mesh, transform))
 				{
-					std::cout << "Collision with mesh\n";
-					std::cout << "Collision distance is: " << MouseRay::GetCollisionDistance() << "\n";
 					isAnyMeshSelected = true;
 
 					if (minIntersectionDistance.first == entt::null)
@@ -1211,9 +1212,15 @@ namespace Yugo
 		}
 
 		if (isAnyMeshSelected)
+		{
 			m_SelectedSceneEntity = minIntersectionDistance.first;
+			s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
+		}
 		else
+		{
 			m_SelectedSceneEntity = entt::null;
+			s_CurrentGizmoOperation = ImGuizmo::BOUNDS;
+		}
 	}
 
 
