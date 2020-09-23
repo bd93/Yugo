@@ -11,6 +11,7 @@ namespace Yugo
 	public:
 		Entity(entt::entity entityHandle, const std::string& name, Scene* scene);
 		Entity() = default;
+		Entity(const Entity& other) = default;
 
 		template<typename T, typename... Args>
 		T& AddComponent(Args&&... args);

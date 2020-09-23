@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "ScriptInterfaceImpl.h"
 #include "Input/UserInput.h"
+#include "Renderer/SpriteRenderer.h"
 
 namespace Yugo
 {
@@ -14,6 +15,30 @@ namespace Yugo
 	{
 		return UserInput::IsMouseButtonPressed(button);
 	}
+
+	bool ScriptInterfaceImpl::IsMouseHoveringRect(TransformComponent& transform)
+	{
+		//return UserInput::IsMouseHoveringRect(transform, mousePos);
+		return MouseRay::CheckCollisionWithSprite(transform);
+	}
+
+	//glm::vec2 ScriptInterfaceImpl::GetMousePosition()
+	//{
+	//	//auto [mousePosX, mousePosY] = UserInput::GetMousePosition();
+	//	//const auto& projection = SpriteRenderer::GetProjection();
+
+	//	//// Transform mouse viewport coords to normalized device coords
+	//	//float mouseNdcX = (2.0f * mousePosX) / 1600.0f - 1.0f; // TEMP!
+	//	//float mouseNdcY = 1.0f - (2.0f * mousePosY) / 1200.0f; // TEMP!
+
+	//	//// Transform normalized device coords to clip coords
+	//	//glm::vec4 clipCoords = glm::vec4(mouseNdcX, mouseNdcY, -1.0f, 1.0f);
+
+	//	//// Transform clip coords to eye space coords
+	//	//glm::vec4 eyeCoords = glm::inverse(projection) * clipCoords;
+
+	//	//return glm::vec2(eyeCoords.x, eyeCoords.y);
+	//}
 
 	Entity& ScriptInterfaceImpl::GetEntity()
 	{
@@ -43,6 +68,11 @@ namespace Yugo
 	EntityTagComponent& ScriptInterfaceImpl::GetEntityTagComponent()
 	{
 		return m_Entity.GetComponent<EntityTagComponent>();
+	}
+
+	SpriteComponent& ScriptInterfaceImpl::GetSpriteComponent()
+	{
+		return m_Entity.GetComponent<SpriteComponent>();
 	}
 
 	bool ScriptInterfaceImpl::HasTransformComponent()

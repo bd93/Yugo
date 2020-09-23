@@ -173,7 +173,7 @@ namespace Yugo
 		return false;
 	}
 
-	bool MouseRay::CheckCollisionWithSprite(const SpriteComponent& sprite, const TransformComponent& transform)
+	bool MouseRay::CheckCollisionWithSprite(const TransformComponent& transform)
 	{
 		float spritePosX = transform.Position.x;
 		float spritePosY = transform.Position.y;

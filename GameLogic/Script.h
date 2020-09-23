@@ -15,6 +15,7 @@ public:
 
 	virtual void OnStart() = 0;
 	virtual void OnUpdate(float ts) = 0;
+	virtual void OnEvent(const Yugo::Event& event) = 0;
 	virtual void OnShutdown() = 0;
 
 	void SetScriptInterface(ScriptInterface* scriptInterface) { m_ScriptInterface = scriptInterface; }
@@ -23,6 +24,8 @@ public:
 	
 	bool IsKeyboardkeyPressed(Yugo::KeyCode key) { return m_ScriptInterface->IsKeyboardkeyPressed(key); }
 	bool IsMouseButtonPressed(Yugo::MouseCode button) { return m_ScriptInterface->IsMouseButtonPressed(button); }
+	bool IsMouseHoveringRect(TransformComponent& transform) { return m_ScriptInterface->IsMouseHoveringRect(transform); }
+	//glm::vec2 GetMousePosition() { return m_ScriptInterface->GetMousePosition(); }
 
 	template<typename T>
 	T& GetComponent() {}
@@ -38,6 +41,9 @@ public:
 
 	template<>
 	Yugo::EntityTagComponent& GetComponent<Yugo::EntityTagComponent>() { return m_ScriptInterface->GetEntityTagComponent(); }
+
+	template<>
+	Yugo::SpriteComponent& GetComponent<Yugo::SpriteComponent>() { return m_ScriptInterface->GetSpriteComponent(); }
 
 	template<typename T>
 	bool HasComponent() {}

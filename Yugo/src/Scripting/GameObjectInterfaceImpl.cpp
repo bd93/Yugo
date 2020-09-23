@@ -15,6 +15,19 @@ namespace Yugo
 		return m_Scene;
 	}
 
+	std::vector<entt::entity>& GameObjectInterfaceImpl::GetEntitiesWithEntityTagComponent()
+	{
+		// Clear already used entities
+		if (m_Entities.size() > 0)
+			m_Entities.clear();
+
+		auto view = m_Scene->GetRegistry().view<EntityTagComponent>();
+		for (auto entity : view)
+			m_Entities.push_back(entity);
+
+		return m_Entities;
+	}
+
 	TransformComponent& GameObjectInterfaceImpl::GetTransformComponent(Entity& entity)
 	{
 		return entity.GetComponent<TransformComponent>();

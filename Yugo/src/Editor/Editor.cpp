@@ -5,6 +5,8 @@
 #include "Scripting/ScriptComponent.h"
 #include "Core/Time.h"
 #include "Core/ModelImporter.h"
+#include "Renderer/SpriteRenderer.h"
+#include "UI/Widget.h"
 
 #include <ImGuizmo.h>
 #include <windows.h>
@@ -15,6 +17,10 @@ namespace Yugo
 
 	// Play mode flag
 	static bool s_PlayMode = false;
+	// Show/hide in-game UI in editor
+	static bool s_RenderUI = true;
+	// Show/hide bounding boxes
+	static bool s_RenderBoundingBox = false;
 
 	// ImGuizmo widget data
 	static ImGuizmo::OPERATION s_CurrentGizmoOperation(ImGuizmo::TRANSLATE);
@@ -33,7 +39,7 @@ namespace Yugo
 		m_SceneInfo.SceneWidth = 1200;
 		m_SceneInfo.SceneHeight = 800;
 		m_Scene = sPtrCreate<Scene>();
-		m_UserInterface = sPtrCreate<UserInterface>(m_Scene.get());
+		m_UserInterface = sPtrCreate<UserInterface>(m_Scene);
 		m_ScriptEngine = uPtrCreate<ScriptEngine>();
 		m_SelectedSceneEntity = entt::null;
 	}
@@ -206,7 +212,21 @@ namespace Yugo
 		// Render Scene
 		m_FrameBuffer->Bind();
 		m_Scene->OnRender();
-		if (s_PlayMode)
+		if (s_RenderBoundingBox)
+		{
+			auto view = m_Scene->m_Registry.view<MeshComponent, BoundBoxComponent, TransformComponent>();
+			for (auto entity : view)
+			{
+				auto& [aabb, transform] = view.get<BoundBoxComponent, TransformComponent>(entity);
+				MeshRenderer::DrawAABB(aabb, transform, ResourceManager::GetShader("quadShader"));
+
+				//for (const auto& subAABB : aabb.SubAABBs)
+				//{
+				//	MeshRenderer::DrawAABB(subAABB, transform, ResourceManager::GetShader("quadShader"));
+				//}
+			}
+		}
+		if (s_RenderUI || s_PlayMode)
 			m_UserInterface->OnRender();
 		m_FrameBuffer->Unbind();
 
@@ -240,63 +260,79 @@ namespace Yugo
 
 	void Editor::OnUpdate(float ts)
 	{
-		// The order of updates is important! If scene update goes first, then script can't execute entity movement
-		//auto view = m_Scene->m_Registry.view<ScriptComponent>();
-		if (s_PlayMode)
-			m_ScriptEngine->OnUpdate(ts);
-
-		m_Scene->OnUpdate(ts);
-		if (s_PlayMode)
-			m_UserInterface->OnUpdate(ts);
-
-		// TEMPORARY!!!
 		if (s_PlayMode)
 		{
-			auto view = m_Scene->m_Registry.view<TransformComponent>();
+			// The order of update is important! If scene is updated first, then script can't execute entity movement
+			m_ScriptEngine->OnUpdate(ts);
+			m_Scene->OnUpdate(ts);
+			m_UserInterface->OnUpdate(ts);
+		}
+		else
+		{
+			m_Scene->OnUpdate(ts);
+
+			auto view = m_Scene->m_Registry.view<MeshComponent, TransformComponent, AnimationComponent>();
 			for (auto entity : view)
 			{
-				auto& transform = view.get<TransformComponent>(entity);
-
-				transform.ModelMatrix = glm::mat4(1.0f);
-				transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
-				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-				transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
+				auto& [mesh, animation] = view.get<MeshComponent, AnimationComponent>(entity);
+				if (animation.IsAnimationRunning)
+					Animation::RunAnimation(mesh, animation);
 			}
 		}
+
+		if (s_RenderUI)
+			m_UserInterface->OnUpdate(ts);
 	}
 
 	void Editor::OnEvent(const Event& event)
 	{
-		if (event.GetEventType() == EventType::MouseButtonPress)
+		if (s_PlayMode)
 		{
-			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
-			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT && m_IsSceneWindowHovered)
+			if (event.GetEventType() == EventType::MouseButtonPress)
 			{
-				if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL)) // TODO: fix this situation where specific keys needs to be negated!
+				const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
+				if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT && m_IsSceneWindowHovered)
 				{
-					MouseRay::CalculateRayOrigin(m_Scene->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
-					SelectMesh();
-					//m_UserInterface->OnEvent(event);
+					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL)) // TODO: fix this situation where specific keys needs to be negated!
+					{
+						//MouseRay::CalculateRayOrigin(m_Scene->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
+						//m_UserInterface->OnEvent(event);
+						MouseRay::CalculateRayOrigin(m_UserInterface->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
+						m_ScriptEngine->OnEvent(event);
+					}
 				}
 			}
 		}
-
-		// Import asset event is invoked when user drag and drop asset to scene imgui window 
-		if (event.GetEventType() == EventType::ImportAsset)
+		else
 		{
-			MouseRay::CalculateRayOrigin(m_Scene->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
+			if (event.GetEventType() == EventType::MouseButtonPress)
+			{
+				const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
+				if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT && m_IsSceneWindowHovered)
+				{
+					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL)) // TODO: fix this situation where specific keys needs to be negated!
+					{
+						MouseRay::CalculateRayOrigin(m_Scene->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
+						SelectMesh();
+					}
+				}
+			}
 
-			const auto& importAssetEvent = static_cast<const ImportAssetEvent&>(event);
-			const auto& importAssetFilePath = importAssetEvent.GetAssetFilePath();
-			
-			ImportAsset(importAssetFilePath);
-		}
+			// Import asset event is invoked when user drag and drop asset to scene imgui window 
+			if (event.GetEventType() == EventType::ImportAsset)
+			{
+				MouseRay::CalculateRayOrigin(m_Scene->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 
-		if (event.GetEventType() == EventType::MouseScroll && m_IsSceneWindowHovered)
-		{
-			m_Scene->m_Camera->OnEvent(event); // TODO: Decouple editor's events from in-game events!
+				const auto& importAssetEvent = static_cast<const ImportAssetEvent&>(event);
+				const auto& importAssetFilePath = importAssetEvent.GetAssetFilePath();
+
+				ImportAsset(importAssetFilePath);
+			}
+
+			if (event.GetEventType() == EventType::MouseScroll && m_IsSceneWindowHovered)
+			{
+				m_Scene->m_Camera->OnEvent(event);
+			}
 		}
 	}
 
@@ -490,8 +526,28 @@ namespace Yugo
 	{
 		ImGui::Begin("Inspector");
 
+		ImGui::Checkbox("Show UI", &s_RenderUI);
+		ImGui::Separator();
+
+		const char* components[] = { "MeshComponent", "SpriteComponent", "AnimationComponent", "ScriptComponent" };
+		static bool toggles[] = { false, false, false, false }; // For toggle widget
+
 		if (m_SelectedSceneEntity != entt::null)
 		{
+			for (int i = 0; i < IM_ARRAYSIZE(components); i++)
+			{
+				toggles[i] = false; // Reset previous state
+				if (components[i] == "MeshComponent" && m_Scene->m_Registry.has<MeshComponent>(m_SelectedSceneEntity))
+					toggles[i] = true;
+				if (components[i] == "SpriteComponent" && m_Scene->m_Registry.has<SpriteComponent>(m_SelectedSceneEntity))
+					toggles[i] = true;
+				if (components[i] == "AnimationComponent" && m_Scene->m_Registry.has<AnimationComponent>(m_SelectedSceneEntity))
+					toggles[i] = true;
+				if (components[i] == "ScriptComponent" && m_Scene->m_Registry.has<ScriptComponent>(m_SelectedSceneEntity))
+					toggles[i] = true;
+			}
+
+			// Always show TransformComponent
 			auto& transform = m_Scene->m_Registry.get<TransformComponent>(m_SelectedSceneEntity);
 
 			ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform.ModelMatrix), glm::value_ptr(transform.Position), glm::value_ptr(transform.Rotation), glm::value_ptr(transform.Scale));
@@ -543,116 +599,192 @@ namespace Yugo
 
 			ImGui::Separator();
 
-			auto view = m_Scene->m_Registry.view<MeshComponent, AnimationComponent>();
-			for (auto entity : view)
+			for (int i = 0; i < IM_ARRAYSIZE(components); ++i)
 			{
-				auto& [mesh, animation] = view.get<MeshComponent, AnimationComponent>(entity);
-				if (entity == m_SelectedSceneEntity)
+				if (toggles[i])
 				{
-					static std::string firstAnimationName = "None"; // Keep track of selected entity's first animation name in order to show it in Combo preview
-					static std::string currentAnimationName = animation.AnimationNameVec[0];
-					if (firstAnimationName != animation.AnimationNameVec[0])
+					if (components[i] == "MeshComponent")
 					{
-						firstAnimationName = animation.AnimationNameVec[0];
-						currentAnimationName = firstAnimationName;
+						ImGui::Checkbox("Show Bounding Box", &s_RenderBoundingBox);
+
+						ImGui::Separator();
 					}
-					
-					if (ImGui::BeginCombo("Animation Names", currentAnimationName.c_str())) // The second parameter is the label previewed before opening the combo.
+
+					if (components[i] == "AnimationComponent")
 					{
-						for (uint32_t i = 0; i < animation.AnimationNameVec.size(); ++i)
+						auto view = m_Scene->m_Registry.view<MeshComponent, AnimationComponent>();
+						for (auto entity : view)
 						{
-							bool isSelected = (currentAnimationName == animation.AnimationNameVec[i]);
-							if (ImGui::Selectable(animation.AnimationNameVec[i].c_str(), isSelected))
-								currentAnimationName = animation.AnimationNameVec[i];
-							if (isSelected)
-								ImGui::SetItemDefaultFocus();   // Set the initial focus when opening the combo
+							auto& [mesh, animation] = view.get<MeshComponent, AnimationComponent>(entity);
+							if (entity == m_SelectedSceneEntity)
+							{
+								static std::string firstAnimationName = "None"; // Keep track of selected entity's first animation name in order to show it in Combo preview
+								static std::string currentAnimationName = animation.AnimationNameVec[0];
+								if (firstAnimationName != animation.AnimationNameVec[0])
+								{
+									firstAnimationName = animation.AnimationNameVec[0];
+									currentAnimationName = firstAnimationName;
+								}
+
+								if (ImGui::BeginCombo("Animation Names", currentAnimationName.c_str())) // The second parameter is the label previewed before opening the combo.
+								{
+									for (uint32_t i = 0; i < animation.AnimationNameVec.size(); ++i)
+									{
+										bool isSelected = (currentAnimationName == animation.AnimationNameVec[i]);
+										if (ImGui::Selectable(animation.AnimationNameVec[i].c_str(), isSelected))
+											currentAnimationName = animation.AnimationNameVec[i];
+										if (isSelected)
+											ImGui::SetItemDefaultFocus();   // Set the initial focus when opening the combo
+									}
+									ImGui::EndCombo();
+								}
+
+								if (ImGui::Button("Start Animation"))
+								{
+									animation.RunningAnimationName = currentAnimationName;
+									animation.IsAnimationRunning = true;
+									animation.AnimationMap[currentAnimationName].AnimationStartingTime = Time::CurrentRealTime();
+								}
+
+								ImGui::SameLine();
+
+								if (ImGui::Button("Stop Animation"))
+								{
+									animation.IsAnimationRunning = false;
+									animation.RunningAnimationName = "None";
+								}
+							}
 						}
-						ImGui::EndCombo();
+
+						ImGui::Separator();
 					}
 
-					if (ImGui::Button("Start Animation"))
+					if (components[i] == "ScriptComponent")
 					{
-						animation.RunningAnimationName = currentAnimationName;
-						animation.IsAnimationRunning = true;
-						animation.AnimationMap[currentAnimationName].AnimationStartingTime = Time::CurrentRealTime();
+						static std::string scriptFilePath = "Script: None";
+						static entt::entity previousEntity = m_SelectedSceneEntity;
+
+						if (previousEntity != m_SelectedSceneEntity)
+						{
+							if (m_Scene->m_Registry.has<ScriptComponent>(m_SelectedSceneEntity))
+							{
+								auto& scriptComponent = m_Scene->m_Registry.get<ScriptComponent>(m_SelectedSceneEntity);
+								scriptFilePath = scriptComponent.ScriptFilePath;
+							}
+							else
+							{
+								scriptFilePath = "Script: None";
+							}
+							previousEntity = m_SelectedSceneEntity;
+						}
+						ImGui::Text(scriptFilePath.c_str());
+
+						if (ImGui::Button("Select Script"))
+							ShowFileDialogBox("Open", scriptFilePath);
+
+						ImGui::SameLine();
+						if (ImGui::Button("Attach Script"))
+						{
+							auto& scriptComponent = m_Scene->m_Registry.get<ScriptComponent>(m_SelectedSceneEntity);
+							auto& entityTagComponent = m_Scene->m_Registry.get<EntityTagComponent>(m_SelectedSceneEntity);
+
+							scriptComponent.ScriptFilePath = scriptFilePath;
+							Entity entity(m_SelectedSceneEntity, entityTagComponent.Name, m_Scene.get());
+							m_ScriptEngine->AttachScript(scriptFilePath, entity);
+						}
+
+						ImGui::Separator();
 					}
 
-					ImGui::SameLine();
-
-					if (ImGui::Button("Stop Animation"))
+					if (components[i] == "SpriteComponent")
 					{
-						animation.IsAnimationRunning = false;
-						animation.RunningAnimationName = "None";
+						auto view = m_Scene->m_Registry.view<SpriteComponent>();
+						if (m_SelectedSceneEntity != entt::null)
+						{
+							auto& sprite = m_Scene->m_Registry.get<SpriteComponent>(m_SelectedSceneEntity);
+							auto& texture = sprite.Texture;
+							ImGui::Text("Texture:");
+							ImGui::Image((void*)texture.GetId(), ImVec2(80.0f, 80.0f), ImVec2(0, 0), ImVec2(1, 1));
+							if (ImGui::BeginDragDropTarget())
+							{
+								if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Import Asset"))
+								{
+									char* payloadData = (char*)payload->Data;
+									std::string assetFilePath(payloadData);
+									if (ResourceManager::HasTexture(assetFilePath))
+									{
+										sprite.Texture = ResourceManager::GetTexture(assetFilePath);
+									}
+									else
+									{
+										ResourceManager::AddTexture(assetFilePath, Texture(assetFilePath));
+										sprite.Texture = ResourceManager::GetTexture(assetFilePath);
+									}
+								}
+								ImGui::EndDragDropTarget();
+							}
+						}
+
+						ImGui::Separator();
 					}
 				}
 			}
 
-			ImGui::Separator();
-
-			static std::string scriptFilePath = "Script: None";
-			ImGui::Text(scriptFilePath.c_str());
-
-			if (ImGui::Button("Select Script"))
-				ShowFileDialogBox("Open", scriptFilePath);
-			
-			ImGui::SameLine();
-
-			if (m_Scene->m_Registry.has<ScriptComponent>(m_SelectedSceneEntity))
-			{
-				if (ImGui::Button("Attach Script"))
-				{
-					auto& scriptComponent = m_Scene->m_Registry.get<ScriptComponent>(m_SelectedSceneEntity);
-					scriptComponent.ScriptFilePath = scriptFilePath;
-
-					// TODO: Implement how to change Entity in ScriptBehaviour!
-				}
-			}
-			else
-			{
-				if (ImGui::Button("Attach Script"))
-				{
-					auto& scriptComponent = m_Scene->m_Registry.emplace<ScriptComponent>(m_SelectedSceneEntity);
-					auto& entityTagComponent = m_Scene->m_Registry.get<EntityTagComponent>(m_SelectedSceneEntity);
-
-					scriptComponent.ScriptFilePath = scriptFilePath;
-					Entity entity(m_SelectedSceneEntity, entityTagComponent.Name, m_Scene.get());
-					m_ScriptEngine->AttachScript(scriptFilePath, entity);
-				}
-			}
-
-			ImGui::Separator();
-
-			static int selected_fish = -1;
-			const char* names[] = { "TransformComponent", "MeshComponent", "SpriteComponent", "AnimationComponent" };
 			if (ImGui::Button("Add Component"))
 				ImGui::OpenPopup("addComponentPopup");
 			ImGui::SameLine();
-			ImGui::TextUnformatted(selected_fish == -1 ? "<None>" : names[selected_fish]);
 			if (ImGui::BeginPopup("addComponentPopup"))
 			{
-				ImGui::Text("Components");
-				ImGui::Separator();
-				for (int i = 0; i < IM_ARRAYSIZE(names); i++)
-					if (ImGui::Selectable(names[i]))
+				for (int i = 0; i < IM_ARRAYSIZE(components); i++)
+				{
+					if (ImGui::MenuItem(components[i], "", &toggles[i]))
 					{
-						selected_fish = i;
-						if (names[i] == "TransformComponent")
+						if (components[i] == "MeshComponent")
 						{
-							auto& transform = m_Scene->m_Registry.emplace<TransformComponent>(m_SelectedSceneEntity);
-							transform.Position = glm::vec3(0.0f, 0.0f, 0.0f);
-							transform.Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-							transform.Scale = glm::vec3(10.0f, 10.0f, 10.0f);
-							transform.ModelMatrix = glm::mat4(1.0f);
-							transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
-							transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
-							break;
+							if (toggles[i])
+							{
+								auto& entityTag = m_Scene->m_Registry.get<EntityTagComponent>(m_SelectedSceneEntity);
+								auto& [loadedMesh, loadedAnimation] = ModelImporter::LoadMeshFile(entityTag.AssetFilePath);
+								auto& mesh = m_Scene->m_Registry.emplace<MeshComponent>(m_SelectedSceneEntity, *loadedMesh);
+								MeshRenderer::Submit(mesh);
+							}
+							else
+							{
+								m_Scene->m_Registry.remove<MeshComponent>(m_SelectedSceneEntity);
+							}
 						}
-						if (names[i] == "SpriteComponent")
+						if (components[i] == "SpriteComponent")
 						{
-							m_Scene->m_Registry.emplace<SpriteComponent>(m_SelectedSceneEntity);
-							break;
+							if (toggles[i])
+							{
+								auto& sprite = m_Scene->m_Registry.emplace<SpriteComponent>(m_SelectedSceneEntity);
+								SpriteRenderer::Submit(sprite);
+							}
+							else
+							{
+								m_Scene->m_Registry.remove<SpriteComponent>(m_SelectedSceneEntity);
+							}
+						}
+						if (components[i] == "AnimationComponent")
+						{
+							if (toggles[i])
+								m_Scene->m_Registry.emplace<AnimationComponent>(m_SelectedSceneEntity);
+							else
+								m_Scene->m_Registry.remove<AnimationComponent>(m_SelectedSceneEntity);
+						}
+						if (components[i] == "ScriptComponent")
+						{
+							if (toggles[i])
+							{
+								m_Scene->m_Registry.emplace<ScriptComponent>(m_SelectedSceneEntity);
+							}
+							else
+							{
+								m_Scene->m_Registry.remove<ScriptComponent>(m_SelectedSceneEntity);
+							}
 						}
 					}
+				}
 				ImGui::EndPopup();
 			}
 		}
@@ -828,9 +960,18 @@ namespace Yugo
 		if (m_SelectedSceneEntity != entt::null)
 		{
 			auto& transform = m_Scene->m_Registry.get<TransformComponent>(m_SelectedSceneEntity);
-			const auto& projectionMatrix = m_Scene->m_Camera->GetProjectionMatrix();
 			const auto& viewMatrix = m_Scene->m_Camera->GetViewMatrix();
-			ShowImGuizmoWidget(transform, projectionMatrix, viewMatrix);
+			if (m_Scene->m_Registry.has<SpriteComponent>(m_SelectedSceneEntity))
+			{
+				// For UI rendering
+				auto& projectionMatrix = m_UserInterface->m_Camera->GetProjectionMatrix();
+				ShowImGuizmoWidget(transform, projectionMatrix, glm::mat4(1.0f));
+			}
+			else
+			{
+				const auto& projectionMatrix = m_Scene->m_Camera->GetProjectionMatrix();
+				ShowImGuizmoWidget(transform, projectionMatrix, viewMatrix);
+			}
 		}
 		
 		ImGui::End();
@@ -840,6 +981,8 @@ namespace Yugo
 		if (ImGui::Button("Play Scene"))
 		{
 			s_PlayMode = true;
+			if (m_SelectedSceneEntity != entt::null)
+				m_SelectedSceneEntity = entt::null;
 			m_ScriptEngine->OnStart();
 		}
 
@@ -884,6 +1027,16 @@ namespace Yugo
 			s_BoundSizing ? s_Bounds : NULL,
 			s_BoundSizingSnap ? s_BoundsSnap : NULL
 		);
+
+		// Update delta position and matrix components (position, rotation, scale) after guizmo manipulation
+		float position[3];
+		float rotation[3];
+		float scale[3];
+		ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform.ModelMatrix), position, rotation, scale);
+		transform.DeltaPosition = glm::vec3(position[0] - transform.Position.x, position[1] - transform.Position.y, position[2] - transform.Position.z);
+		transform.Position = glm::vec3(position[0], position[1], position[2]);
+		transform.Rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
+		transform.Scale = glm::vec3(scale[0], scale[1], scale[2]);
 	}
 
 	void Editor::ShowFileDialogBox(const std::string& option, std::string& fullPath)
@@ -1008,52 +1161,101 @@ namespace Yugo
 			stringNodeId = std::to_string((uint32_t)node + 2);
 		}
 		
-		static char newGameObjectName[32] = "";
+		static char newUiWidgetName[32] = "";
+		static char newSpriteName[32] = "";
 		std::string menuAction = "";
 
 		if (ImGui::BeginPopup(stringNodeId.c_str()))
 		{
-			if (ImGui::MenuItem("New")) { menuAction = "New"; }
+			if (ImGui::BeginMenu("New"))
+			{
+				if (ImGui::MenuItem("UI Widget")) { menuAction = "UI Widget"; }
+				if (ImGui::MenuItem("Sprite")) { menuAction = "Sprite"; }
+				ImGui::EndMenu();
+			}
+			if (!isSceneRootNode && ImGui::MenuItem("Rename")) { menuAction = "Rename"; }
+			if (!isSceneRootNode && ImGui::MenuItem("Copy")) { menuAction = "Copy"; }
 			if (!isSceneRootNode && ImGui::MenuItem("Delete")) { menuAction = "Delete"; }
 			if (ImGui::MenuItem("Cancel")) { menuAction = "Cancel"; }
 			ImGui::EndPopup();
 		}
 
 		ImGui::PushID(stringNodeId.c_str());
-		if (menuAction == "New") { ImGui::OpenPopup("New"); }
+		if (menuAction == "UI Widget") { ImGui::OpenPopup("UI Widget"); }
+		if (menuAction == "Sprite") { ImGui::OpenPopup("Sprite"); }
+		if (menuAction == "Rename") { ImGui::OpenPopup("Rename"); }
+		if (menuAction == "Copy") // Currently only leaf nodes can be copied!!
+		{
+			auto copyEntity = m_Scene->CreateEntity();
+
+			// TODO: Try to use registry.visit instead of manually asking if entity has any of the following components!
+			//m_Scene->m_Registry.visit(node, [&](const auto componentTypeId) {
+			//	const auto type = entt::resolve_type(componentTypeId);
+			//});
+
+			if (m_Scene->m_Registry.has<EntityTagComponent>(node))
+				m_Scene->m_Registry.emplace<EntityTagComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<EntityTagComponent>(node));
+
+			if (m_Scene->m_Registry.has<TransformComponent>(node))
+				m_Scene->m_Registry.emplace<TransformComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<TransformComponent>(node));
+
+			if (m_Scene->m_Registry.has<MeshComponent>(node))
+				m_Scene->m_Registry.emplace<MeshComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<MeshComponent>(node));
+
+			if (m_Scene->m_Registry.has<BoundBoxComponent>(node))
+				m_Scene->m_Registry.emplace<BoundBoxComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<BoundBoxComponent>(node));
+
+			if (m_Scene->m_Registry.has<SpriteComponent>(node))
+				m_Scene->m_Registry.emplace<SpriteComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<SpriteComponent>(node));
+
+			if (m_Scene->m_Registry.has<WidgetComponent>(node))
+				m_Scene->m_Registry.emplace<WidgetComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<WidgetComponent>(node));
+
+			if (m_Scene->m_Registry.has<RelationshipComponent>(node))
+			{
+				m_Scene->m_Registry.emplace<RelationshipComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<RelationshipComponent>(node));
+
+				auto& nodeRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
+				if (nodeRelationship.Parent != entt::null)
+				{
+					auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(nodeRelationship.Parent);
+					parentRelationship.Children.push_back(copyEntity.GetEnttEntity());
+					parentRelationship.NumOfChildren++;
+				}
+			}
+		}
 		if (menuAction == "Delete") { ImGui::OpenPopup("Delete"); }
 		if (menuAction == "Cancel") {}
 
-		if (ImGui::BeginPopup("New"))
+		if (ImGui::BeginPopup("UI Widget"))
 		{
-			ImGui::Text("Enter new game object's name:");
-			ImGui::InputText("##gameObjectName", newGameObjectName, IM_ARRAYSIZE(newGameObjectName));
+			ImGui::Text("Enter UI widget's name:");
+			ImGui::InputText("##uiWidgetName", newUiWidgetName, IM_ARRAYSIZE(newUiWidgetName));
 			if (ImGui::Button("OK"))
 			{
-				auto newEntity = m_Scene->CreateEntity();
-
-				auto& transform = newEntity.AddComponent<TransformComponent>();
+				auto newWidget = m_Scene->CreateEntity();
+				
+				auto& tag = newWidget.AddComponent<EntityTagComponent>();
+				auto& transform = newWidget.AddComponent<TransformComponent>();
+				auto& relationship = newWidget.AddComponent<RelationshipComponent>();
+				auto& sprite = newWidget.AddComponent<SpriteComponent>();
+				auto& widget = newWidget.AddComponent<WidgetComponent>();
+				
 				transform.Position = glm::vec3(0.0f, 0.0f, 0.0f);
 				transform.Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-				transform.Scale = glm::vec3(10.0f, 10.0f, 10.0f);
-				transform.ModelMatrix = glm::mat4(1.0f);
-				transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
-				transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
-
-				auto& tag = newEntity.AddComponent<EntityTagComponent>();
-				auto& relationship = newEntity.AddComponent<RelationshipComponent>();
-				
-				tag.Name = newGameObjectName;
+				transform.Scale = glm::vec3(100.0f, 100.0f, 1.0f);
+				tag.Name = newUiWidgetName;
 				relationship.Parent = node;
+				SpriteRenderer::Submit(sprite);
 
 				if (node != entt::null)
 				{
 					auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
-					parentRelationship.Children.push_back(newEntity.GetEnttEntity());
+					parentRelationship.Children.push_back(newWidget.GetEnttEntity());
 					parentRelationship.NumOfChildren++;
 				}
 
-				memset(newGameObjectName, 0, 32 * sizeof(newGameObjectName[0]));
+				memset(newUiWidgetName, 0, 32 * sizeof(newUiWidgetName[0]));
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::SameLine();
@@ -1063,6 +1265,65 @@ namespace Yugo
 			}
 			ImGui::EndPopup();
 		}
+
+		if (ImGui::BeginPopup("Sprite"))
+		{
+			ImGui::Text("Enter sprite's name:");
+			ImGui::InputText("##spriteName", newSpriteName, IM_ARRAYSIZE(newSpriteName));
+			if (ImGui::Button("OK"))
+			{
+				auto newEntity = m_Scene->CreateEntity();
+				
+				auto& tag = newEntity.AddComponent<EntityTagComponent>();
+				auto& transform = newEntity.AddComponent<TransformComponent>();
+				auto& relationship = newEntity.AddComponent<RelationshipComponent>();
+				auto& sprite = newEntity.AddComponent<SpriteComponent>();
+				
+				transform.Position = glm::vec3(0.0f, 0.0f, 0.0f);
+				transform.Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+				transform.Scale = glm::vec3(100.0f, 100.0f, 1.0f);
+				tag.Name = newSpriteName;
+				relationship.Parent = node;
+				SpriteRenderer::Submit(sprite);
+
+				if (node != entt::null)
+				{
+					auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
+					parentRelationship.Children.push_back(newEntity.GetEnttEntity());
+					parentRelationship.NumOfChildren++;
+				}
+
+				memset(newSpriteName, 0, 32 * sizeof(newSpriteName[0]));
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
+		if (ImGui::BeginPopup("Rename"))
+		{
+			ImGui::Text("Enter new name:");
+			ImGui::InputText("##name", newSpriteName, IM_ARRAYSIZE(newSpriteName));
+			if (ImGui::Button("OK"))
+			{
+				auto& tag = m_Scene->m_Registry.get<EntityTagComponent>(node);
+				tag.Name = newSpriteName;
+
+				memset(newSpriteName, 0, 32 * sizeof(newSpriteName[0]));
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel"))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
 		if (ImGui::BeginPopup("Delete"))
 		{
 			ImGui::Text("Are you sure you want to delete this game object?");
@@ -1072,6 +1333,10 @@ namespace Yugo
 
 			if (ImGui::Button("OK"))
 			{
+				// If entity is selected, then unselect it in order to delete it (this way there won't be any bugs)
+				if (m_SelectedSceneEntity != entt::null)
+					m_SelectedSceneEntity = entt::null;
+
 				TraverseFun Traverse = [&](entt::entity entity) {
 					auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(entity);
 					for (auto child : relationship.Children)
@@ -1152,24 +1417,19 @@ namespace Yugo
 		if (loadedMesh->HasAnimation)
 			auto& animation = meshEntity.AddComponent<AnimationComponent>(*loadedAnimation);
 
-		transform.ModelMatrix = glm::mat4(1.0f);
-
 		// Check if mouse ray intersects ground plane
 		if (MouseRay::CheckCollisionWithPlane())
 		{
 			// Place asset on the intersection point
 			const glm::vec3& intersectionPoint = MouseRay::GetIntersectionPoint();
-			transform.ModelMatrix = glm::translate(transform.ModelMatrix, intersectionPoint);
 			transform.Position = intersectionPoint;
 		}
 		else
 		{
 			// Place asset on the origin point of world coordinate system
-			transform.ModelMatrix = glm::translate(transform.ModelMatrix, glm::vec3(0.0f, 0.0f, 0.0f));
 			transform.Position = glm::vec3(0.0f, 0.0f, 0.0f);
 		}
 
-		transform.ModelMatrix = glm::scale(transform.ModelMatrix, glm::vec3(10.0f, 10.0f, 10.0f));
 		transform.Scale = glm::vec3(10.0f, 10.0f, 10.0f);
 
 		MeshRenderer::Submit(mesh);

@@ -12,8 +12,8 @@ namespace Yugo
 		m_Yaw(-135.0f), // -90(by default) - 45 = -135
 		m_Pitch(-45.0f),
 		m_PivotDistance(20.0f),
-		m_FrustrumWidth(1200.0f),
-		m_FrustrumHeight(1000.0f)
+		m_FrustrumWidth(1600.0f),
+		m_FrustrumHeight(1200.0f)
 	{
 		//m_Projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 500.0f);
 		//m_Projection = glm::ortho(-600.0f, 600.0f, -400.0f, 400.0f, -400.0f, 400.0f);

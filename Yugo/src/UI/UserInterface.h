@@ -2,14 +2,21 @@
 #include "Events/Event.h"
 #include "Scene/Scene.h"
 #include "Core/Dispatcher.h"
+#include "WidgetComponent.h"
+
 
 namespace Yugo
 {
 
+	class Widget;
+
 	class UserInterface
 	{
+		friend class Widget;
+		friend class Editor; // World editor UI
+
 	public:
-		UserInterface(Scene* scene);
+		UserInterface(sPtr<Scene>& scene);
 
 		void OnStart();
 		void OnEvent(const Event& event);
@@ -20,8 +27,12 @@ namespace Yugo
 		void SaveUserInerface();
 		void LoadUserInterface();
 
+		Widget CreateWidget(const std::string& name = "");
+
 	private:
-		Scene* m_Scene;
+		sPtr<Scene> m_Scene; // TEMPORARY!
+		sPtr<Camera> m_Camera;
+		entt::registry m_Registry;
 	};
 
 }

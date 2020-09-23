@@ -18,6 +18,22 @@ namespace Yugo
 		s_TextureMap[fileName] = texture;
 	}
 
+	bool ResourceManager::HasShader(std::string name)
+	{
+		if (s_ShaderMap.find(name) != s_ShaderMap.end())
+			return true;
+		else
+			return false;
+	}
+
+	bool ResourceManager::HasTexture(std::string name)
+	{
+		if (s_TextureMap.find(name) != s_TextureMap.end())
+			return true;
+		else
+			return false;
+	}
+
 	const Shader& ResourceManager::GetShader(std::string name)
 	{
 		return s_ShaderMap[name];

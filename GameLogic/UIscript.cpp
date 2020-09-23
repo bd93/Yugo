@@ -7,32 +7,22 @@
 #include "Events.h"
 
 
-class PlayerScript : public Script
+class UIscript : public Script
 {
 private:
-	std::vector<GameObject> m_Enemies;
+	std::vector<GameObject> Buttons;
 
 public:
-	PlayerScript() { m_ScriptFilePath = __FILE__; }
+	UIscript() { m_ScriptFilePath = __FILE__; }
 
 	void OnStart() override
 	{
-		m_Enemies = GameObject::FindGameObjectsWithTag("sphere");
+		Buttons = GameObject::FindGameObjectsWithTag("button");
 	}
 
 	void OnUpdate(float ts) override
 	{
-		if (IsKeyboardkeyPressed(KEY_W))
-		{
-			auto& transform = GetComponent<TransformComponent>();
-			transform.Position.x -= 5.0f;
-			
-			for (auto enemy : m_Enemies)
-			{
-				auto& transform = enemy.GetComponent<TransformComponent>();
-				transform.Position.x += 1.0f;
-			}
-		}
+		
 	}
 
 	void OnEvent(const Event& event) override
@@ -42,16 +32,20 @@ public:
 			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
 			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
 			{
-
+				auto& transform = GetComponent<TransformComponent>();
+				if (IsMouseHoveringRect(transform))
+				{
+					std::cout << "Levi klik!\n";
+				}
 			}
 		}
 	}
 
 	void OnShutdown() override
 	{
-		
+
 	}
 };
 
 
-static ScriptRegister<PlayerScript> s_ScriptRegister;
+static ScriptRegister<UIscript> s_ScriptRegister;

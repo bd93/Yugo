@@ -14,6 +14,8 @@ namespace Yugo
 		static std::unordered_map<std::string, Texture> s_TextureMap;
 		static void AddShader(std::string name, Shader& shader);
 		static void AddTexture(std::string name, Texture& texture);
+		static bool HasShader(std::string name);
+		static bool HasTexture(std::string name);
 		static const Shader& GetShader(std::string name);
 		static const Texture& GetTexture(std::string name);
 	};

@@ -19,18 +19,18 @@ namespace Yugo
 		return state == GLFW_PRESS;
 	}
 
-	bool UserInput::IsMouseHoveringRect(const glm::vec2& rectPos, const glm::vec2& rectSize, const glm::vec2& mousePos)
-	{
-		float edgeY1 = rectPos.y;
-		float edgeY2 = rectPos.y - rectSize.y;
-		float edgeX1 = rectPos.x;
-		float edgeX2 = rectPos.x + rectSize.x;
+	//bool UserInput::IsMouseHoveringRect(TransformComponent& transform, const glm::vec2& mousePos)
+	//{
+	//	float edgeY1 = transform.Position.y;
+	//	float edgeY2 = transform.Position.y - transform.Scale.y;
+	//	float edgeX1 = transform.Position.x;
+	//	float edgeX2 = transform.Position.x + transform.Scale.x;
 
-		if (mousePos.x > edgeX1 && mousePos.x < edgeX2 && std::abs(mousePos.y) > std::abs(edgeY1) && glm::abs(mousePos.y) < glm::abs(edgeY2))
-			return true;
-		else
-			return false;
-	}
+	//	if (mousePos.x > edgeX1 && mousePos.x < edgeX2 && std::abs(mousePos.y) > std::abs(edgeY1) && glm::abs(mousePos.y) < glm::abs(edgeY2))
+	//		return true;
+	//	else
+	//		return false;
+	//}
 
 	std::pair<float, float> UserInput::GetMousePosition()
 	{

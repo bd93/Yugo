@@ -78,6 +78,7 @@ namespace Yugo
 		glm::vec3 Rotation;
 		glm::vec3 Scale;
 		glm::mat4 ModelMatrix;
+		glm::vec3 DeltaPosition = { 0.0f, 0.0f, 0.0f };
 	};
 
 	// Axis Aligned Bounding Box

@@ -37,10 +37,6 @@ namespace Yugo
 
 		Entity CreateEntity(const std::string& name = "");
 
-		void CastMouseRay(float mousePosX, float mousePosY, int sceneWidth, int sceneHeight);
-		bool IsAnyMeshSelected();
-		TransformComponent& GetSelectedMeshTransform();
-
 		// TEMPORARY!!!
 		entt::registry& GetRegistry();
 

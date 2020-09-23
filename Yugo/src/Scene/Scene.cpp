@@ -53,30 +53,18 @@ namespace Yugo
 	{
 		m_Camera->OnUpdate(ts);
 
+		auto view = m_Registry.view<TransformComponent>(entt::exclude<WidgetComponent>);
+		for (auto entity : view)
 		{
-			auto view = m_Registry.view<MeshComponent, TransformComponent, AnimationComponent>();
-			for (auto entity : view)
-			{
-				auto& [mesh, animation] = view.get<MeshComponent, AnimationComponent>(entity);
-				if (animation.IsAnimationRunning)
-					Animation::RunAnimation(mesh, animation);
-			}
+			auto& transform = view.get<TransformComponent>(entity);
+
+			transform.ModelMatrix = glm::mat4(1.0f);
+			transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
+			transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+			transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+			transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+			transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
 		}
-
-		//{
-		//	auto view = m_Registry.view<TransformComponent>();
-		//	for (auto entity : view)
-		//	{
-		//		auto& transform = view.get<TransformComponent>(entity);
-
-		//		transform.ModelMatrix = glm::mat4(1.0f);
-		//		transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
-		//		transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-		//		transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-		//		transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-		//		transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
-		//	}
-		//}
 	}
 
 	void Scene::OnRender()
@@ -88,6 +76,7 @@ namespace Yugo
 
 		MeshRenderer::ClearDepthBuffer(); // TODO: Check how to fix this double call
 
+		// Render meshes with animations
 		{
 			auto view = m_Registry.view<MeshComponent, TransformComponent, AnimationComponent>();
 			for (auto entity : view)
@@ -100,6 +89,7 @@ namespace Yugo
 			}
 		}
 
+		// Render meshes without animations
 		{
 			auto view = m_Registry.view<MeshComponent, TransformComponent>(entt::exclude<AnimationComponent>);
 			for (auto entity : view)
@@ -109,28 +99,15 @@ namespace Yugo
 			}
 		}
 
+		// Render sprites
 		{
-			auto view = m_Registry.view<BoundBoxComponent, TransformComponent>();
+			auto view = m_Registry.view<SpriteComponent, TransformComponent>(entt::exclude<WidgetComponent>);
 			for (auto entity : view)
 			{
-				auto& [aabb, transform] = view.get<BoundBoxComponent, TransformComponent>(entity);
-				MeshRenderer::DrawAABB(aabb, transform, ResourceManager::GetShader("quadShader"));
-
-				//for (const auto& subAABB : aabb.SubAABBs)
-				//{
-				//	MeshRenderer::DrawAABB(subAABB, transform, ResourceManager::GetShader("quadShader"));
-				//}
+				auto& [sprite, transform] = view.get<SpriteComponent, TransformComponent>(entity);
+				SpriteRenderer::Render(sprite, transform, ResourceManager::GetShader("quadShader"));
 			}
 		}
-
-		//{
-		//	auto view = m_Registry.view<SpriteComponent, TransformComponent>();
-		//	for (auto entity : view)
-		//	{
-		//		auto& [sprite, transform] = view.get<SpriteComponent, TransformComponent>(entity);
-		//		SpriteRenderer::Render(sprite, transform, ResourceManager::GetShader("uiShader"));
-		//	}
-		//}
 	}
 
 	void Scene::OnShutdown()
@@ -196,31 +173,6 @@ namespace Yugo
 	{
 		Entity entity = {m_Registry.create(), name, this };
 		return entity;
-	}
-
-	void Scene::CastMouseRay(float mousePosX, float mousePosY, int sceneWidth, int sceneHeight)
-	{
-		m_MouseRay.CalculateRayOrigin(m_Camera, mousePosX, mousePosY, sceneWidth, sceneHeight);
-	}
-
-	bool Scene::IsAnyMeshSelected()
-	{
-		if (m_SelectedEntity == entt::null)
-			return false;
-		else
-			return true;
-	}
-
-	TransformComponent& Scene::GetSelectedMeshTransform()
-	{
-		auto view = m_Registry.view<MeshComponent, TransformComponent, BoundBoxComponent>();
-
-		for (auto entity : view)
-		{
-			auto& transform = view.get<TransformComponent>(entity);
-			if (entity == m_SelectedEntity)
-				return transform;
-		}
 	}
 
 	// TEMPORARY!!!

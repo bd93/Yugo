@@ -17,6 +17,8 @@ public:
 	virtual void SetScene(Yugo::Scene* scene) = 0;
 	virtual Yugo::Scene* GetScene() = 0;
 
+	virtual std::vector<entt::entity>& GetEntitiesWithEntityTagComponent() = 0;
+
 	virtual TransformComponent& GetTransformComponent(Yugo::Entity& entity) = 0;
 	virtual MeshComponent& GetMeshComponent(Yugo::Entity& entity) = 0;
 	virtual AnimationComponent& GetAnimationComponent(Yugo::Entity& entity) = 0;

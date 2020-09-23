@@ -14,6 +14,8 @@ class ScriptInterface
 public:
 	virtual bool IsKeyboardkeyPressed(Yugo::KeyCode key) = 0;
 	virtual bool IsMouseButtonPressed(Yugo::MouseCode button) = 0;
+	virtual bool IsMouseHoveringRect(TransformComponent& transform) = 0;
+	//virtual glm::vec2 GetMousePosition() = 0;
 
 	virtual Yugo::Entity& GetEntity() = 0;
 	virtual void SetEntity(Yugo::Entity& entity) = 0;
@@ -22,6 +24,7 @@ public:
 	virtual MeshComponent& GetMeshComponent() = 0;
 	virtual AnimationComponent& GetAnimationComponent() = 0;
 	virtual EntityTagComponent& GetEntityTagComponent() = 0;
+	virtual SpriteComponent& GetSpriteComponent() = 0;
 
 	virtual bool HasTransformComponent() = 0;
 	virtual bool HasMeshComponent() = 0;

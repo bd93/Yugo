@@ -14,8 +14,8 @@ namespace Yugo
 
 	typedef ScriptArray (*CreateScripts)();
 	typedef void (*DeleteScripts)(ScriptArray);
-	typedef GameObject* (*CreateGameObject)(GameObjectInterfaceImpl*);
-	typedef void (*DeleteGameObject)(GameObject*);
+	typedef ::GameObject* (*CreateGameObject)(GameObjectInterfaceImpl*);
+	typedef void (*DeleteGameObject)(::GameObject*);
 
 	class ScriptEngine
 	{
@@ -26,6 +26,7 @@ namespace Yugo
 
 		void OnStart();
 		void OnUpdate(float ts);
+		void OnEvent(const Event& event);
 		void OnShutdown();
 		void OnStop();
 		void OnReload();
@@ -37,7 +38,7 @@ namespace Yugo
 		HINSTANCE m_Lib;
 		ScriptArray m_ScriptArray;
 		Scene* m_Scene;
-		std::vector<GameObject*> m_GameObjects;
+		std::vector<::GameObject*> m_GameObjects;
 		std::vector<ScriptInterfaceImpl*> m_ScriptInterfaceImpls;
 		std::vector<GameObjectInterfaceImpl*> m_GameObjectInterfaceImpls;
 		std::unordered_map<std::string, Entity> m_ScriptEntityMap;

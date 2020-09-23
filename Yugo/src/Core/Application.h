@@ -21,7 +21,8 @@ namespace Yugo
 	private:
 		uPtr<Window> m_Window;
 		uPtr<Editor> m_Editor;
-		//uPtr<ScriptEngine> m_ScriptEngine;
+		//ScriptEngine* m_ScriptEngine;
+		//Scene* m_Scene;
 		
 		void OnStart();
 		void OnShutdown();

@@ -12,6 +12,8 @@ namespace Yugo
 		virtual void SetScene(Scene* scene) override;
 		virtual Scene* GetScene() override;
 
+		virtual std::vector<entt::entity>& GetEntitiesWithEntityTagComponent() override;
+
 		virtual TransformComponent& GetTransformComponent(Entity& entity) override;
 		virtual MeshComponent& GetMeshComponent(Entity& entity) override;
 		virtual AnimationComponent& GetAnimationComponent(Entity& entity) override;
@@ -23,6 +25,7 @@ namespace Yugo
 
 	private:
 		Scene* m_Scene;
+		std::vector<entt::entity> m_Entities; // Container for holding entities with specific components;
 	};
 
 }

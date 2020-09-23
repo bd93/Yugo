@@ -5,6 +5,9 @@
 namespace Yugo
 {
 
+	//glm::mat4 SpriteRenderer::s_ProjectionMat = glm::ortho(-800.0f, 800.0f, -600.0f, 600.0f, -2000.0f, 2000.0f);
+	static sPtr<Camera> s_Camera;
+
 	void SpriteRenderer::Submit(SpriteComponent& sprite)
 	{
 		auto& vertexArray = sPtrCreate<VertexArray<Vertex1P1T>>();
@@ -31,7 +34,7 @@ namespace Yugo
 		shader.Use();
 
 		auto& modelMat = transform.ModelMatrix;
-		auto projectionMat = glm::ortho(-600.0f, 600.0f, -500.0f, 500.0f, -2000.0f, 2000.0f);
+		auto& projectionMat = s_Camera->GetProjectionMatrix();
 
 		shader.SetMat4("model", modelMat);
 		shader.SetMat4("projection", projectionMat);
@@ -44,6 +47,21 @@ namespace Yugo
 		//glDrawArrays(GL_TRIANGLES, 0, sprite.Vertices.size());
 		sprite.ArrayOfVertices->Unbind();
 	}
+
+	void SpriteRenderer::SetCamera(const sPtr<Camera>& camera)
+	{
+		s_Camera = camera;
+	}
+
+	//void SpriteRenderer::SetProjection(float left, float right, float top, float bottom, float front, float back)
+	//{
+	//	s_ProjectionMat = glm::ortho(left, right, top, bottom, front, back);
+	//}
+
+	//glm::mat4& SpriteRenderer::GetProjection()
+	//{
+	//	return s_ProjectionMat;
+	//}
 
 	void SpriteRenderer::EnableBlend()
 	{

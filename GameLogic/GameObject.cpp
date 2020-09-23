@@ -24,17 +24,15 @@ std::vector<GameObject> GameObject::FindGameObjectsWithTag(const std::string& ta
 
 	auto scene = s_GameObjectInterface->GetScene();
 
-	auto view = scene->GetRegistry().view<EntityTagComponent>();
-	for (auto entity : view)
+	auto& entities = s_GameObjectInterface->GetEntitiesWithEntityTagComponent();
+	for (auto& entity : entities)
 	{
-		auto& entityTagComponent = s_GameObjectInterface->GetEntityTagComponent(Yugo::Entity(entity, tagName, scene));
+		GameObject gameObject;
+		gameObject.SetEntity(Yugo::Entity(entity, tagName, scene));
+		auto& entityTagComponent = gameObject.GetComponent<EntityTagComponent>();
 
 		if (entityTagComponent.Name == tagName)
-		{
-			GameObject gameObject;
-			gameObject.SetEntity(Yugo::Entity(entity, tagName, scene));
 			gameObjects.push_back(gameObject);
-		}
 	}
 
 	return gameObjects;
