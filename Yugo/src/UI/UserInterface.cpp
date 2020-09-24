@@ -4,6 +4,7 @@
 #include "Scene/Components.h"
 #include "Scene/Entity.h"
 #include "Renderer/SpriteRenderer.h"
+#include "Renderer/TextRenderer.h"
 #include "Widget.h"
 
 
@@ -36,6 +37,8 @@ namespace Yugo
 		ResourceManager::AddTexture("texture", texture);
 
 		SpriteRenderer::SetCamera(m_Camera);
+		TextRenderer::SetCamera(m_Camera);
+		TextRenderer::Submit();
 	}
 
 	void UserInterface::OnEvent(const Event& event)

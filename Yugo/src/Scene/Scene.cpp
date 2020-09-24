@@ -10,6 +10,7 @@
 #include "Scripting/ScriptComponent.h"
 #include "Renderer/SpriteRenderer.h"
 #include "UI/UserInterface.h"
+#include "Renderer/TextRenderer.h"
 
 
 namespace Yugo
@@ -75,7 +76,7 @@ namespace Yugo
 		Renderer2D::DrawGrid(glm::vec3(0.0f, 0.0f, 0.0f), 100, glm::vec3(50.0f, 50.0f, 50.0f), glm::vec3(0.2f, 0.2f, 0.2f));
 
 		MeshRenderer::ClearDepthBuffer(); // TODO: Check how to fix this double call
-
+		
 		// Render meshes with animations
 		{
 			auto view = m_Registry.view<MeshComponent, TransformComponent, AnimationComponent>();

@@ -214,18 +214,18 @@ project "GameLogic"
             "%{IncludeDir.freetype}"
         }
 
-        libdirs
-        {
-            "Yugo/vendor/Assimp/lib",
-            "Yugo/vendor/freetype/lib"
-        }
+        -- libdirs
+        -- {
+        --     "Yugo/vendor/Assimp/lib",
+        --     "Yugo/vendor/freetype/lib"
+        -- }
 
-        links
-        {
-            "Yugo",
-            "assimp-vc142-mtd.lib",
-            "freetype.lib"
-        }
+        -- links
+        -- {
+        --     "Yugo",
+        --     "assimp-vc142-mtd.lib",
+        --     "freetype.lib"
+        -- }
     
         filter "system:windows"
             systemversion "latest"
