@@ -558,6 +558,44 @@ namespace Yugo
 			
 			ImGui::NewLine();
 
+			// Show padding options for UI widgets
+			if (m_Scene->m_Registry.has<WidgetComponent>(m_SelectedSceneEntity))
+			{
+				auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(m_SelectedSceneEntity);
+				if (relationship.NumOfChildren != 0)
+				{					
+					static float padding[3] = { 0.0f, 0.0f, 0.0f }; // left, right, top
+					ImGui::InputFloat3("Padding", padding);
+					ImGui::NewLine();
+					
+					float widgetWidth = (transform.Position.x + transform.Scale.x - padding[1]) - (transform.Position.x + padding[0]);
+					float childPosY = transform.Position.y;
+					
+					int index = 0;
+					for (auto child : relationship.Children)
+					{
+						auto& childRelationship = m_Scene->m_Registry.get<RelationshipComponent>(child);
+						auto& childTransform = m_Scene->m_Registry.get<TransformComponent>(child);
+
+						if (index == 0)
+							childPosY -= padding[2]; // First button needs to be adjusted according to parent widget
+						else
+							childPosY -= childTransform.Scale.y + padding[2];
+
+						childTransform.Position.x = transform.Position.x + padding[0]; // left
+						childTransform.Position.y = childPosY; // top
+						childTransform.Scale.x = widgetWidth;
+
+						// Model matrix needs to be updated because of ImGuizmo widget's model matrix manipulation
+						childTransform.ModelMatrix = glm::mat4(1.0f);
+						childTransform.ModelMatrix = glm::translate(childTransform.ModelMatrix, childTransform.Position);
+						childTransform.ModelMatrix = glm::scale(childTransform.ModelMatrix, childTransform.Scale);
+
+						index++;
+					}
+				}
+			}
+
 			if (ImGui::RadioButton("Local", s_CurrentGizmoMode == ImGuizmo::LOCAL))
 				s_CurrentGizmoMode = ImGuizmo::LOCAL;
 			ImGui::SameLine();
@@ -845,7 +883,7 @@ namespace Yugo
 
 							if (ImGui::IsItemClicked())
 							{
-								nodeClicked = entityId;
+								//nodeClicked = entityId;
 								m_SelectedSceneEntity = entity;
 								if (s_CurrentGizmoOperation == ImGuizmo::BOUNDS)
 									s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
@@ -859,18 +897,18 @@ namespace Yugo
 						{
 							ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_DefaultOpen;
 							uint32_t entityId = rootId + (uint32_t)entity + 1;
-							
+
 							if (selection == entityId)
 								nodeFlags |= ImGuiTreeNodeFlags_Selected;
 
 							const char* entityTag;
 							entityTag = tag.Name.c_str();
 
-							bool rootNodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)entityId, nodeFlags, entityTag); 
+							bool rootNodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)entityId, nodeFlags, entityTag);
 
 							if (ImGui::IsItemClicked())
 							{
-								nodeClicked = entityId;
+								//nodeClicked = entityId;
 								m_SelectedSceneEntity = entity;
 								if (s_CurrentGizmoOperation == ImGuizmo::BOUNDS)
 									s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
@@ -893,8 +931,21 @@ namespace Yugo
 						traverse(entity);
 				}
 
-				if (nodeClicked != 0)
-					selection = nodeClicked;
+				// Nodes will be selected either by clicking on it or by clicking on model in scene
+				if (m_SelectedSceneEntity != entt::null)
+				{
+					nodeClicked = (uint32_t)m_SelectedSceneEntity + 2; // 0 and 1 are already reserved => Id = 0 for entt::null, Id = 1 for root node (scene name)
+				}
+				else
+				{
+					if (nodeClicked != rootId)
+						nodeClicked = 0;
+				}
+
+				selection = nodeClicked;
+
+				//if (nodeClicked != 0)
+				//	selection = nodeClicked;
 
 				ImGui::PopStyleVar();
 				ImGui::TreePop();
