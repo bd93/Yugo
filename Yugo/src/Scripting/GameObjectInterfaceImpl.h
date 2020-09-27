@@ -8,24 +8,31 @@ namespace Yugo
 
 	class GameObjectInterfaceImpl : public GameObjectInterface
 	{
+		using TraverseFun = std::function<void(entt::entity)>;
+
 	public:
 		virtual void SetScene(Scene* scene) override;
 		virtual Scene* GetScene() override;
 
 		virtual std::vector<entt::entity>& GetEntitiesWithEntityTagComponent() override;
 
-		virtual TransformComponent& GetTransformComponent(Entity& entity) override;
-		virtual MeshComponent& GetMeshComponent(Entity& entity) override;
-		virtual AnimationComponent& GetAnimationComponent(Entity& entity) override;
-		virtual EntityTagComponent& GetEntityTagComponent(Entity& entity) override;
+		virtual TransformComponent& GetTransformComponent(entt::entity entity) override;
+		virtual MeshComponent& GetMeshComponent(entt::entity entity) override;
+		virtual AnimationComponent& GetAnimationComponent(entt::entity entity) override;
+		virtual EntityTagComponent& GetEntityTagComponent(entt::entity entity) override;
 
-		virtual bool HasTransformComponent(Entity& entity) override;
-		virtual bool HasMeshComponent(Entity& entity) override;
-		virtual bool HasAnimationComponent(Entity& entity) override;
+		virtual std::vector<CanvasWidgetComponent*>& GetCanvasWidgetComponentsInChildren(entt::entity entity) override;
+		virtual std::vector<ButtonWidgetComponent*>& GetButtonWidgetComponentsInChildren(entt::entity entity) override;
+		virtual std::vector<TextWidgetComponent*>& GetTextWidgetComponentsInChildren(entt::entity entity) override;
+		virtual std::vector<TransformComponent*>& GetTransformComponentsInChildren(entt::entity entity) override;
+
+		virtual bool HasTransformComponent(entt::entity entity) override;
+		virtual bool HasMeshComponent(entt::entity entity) override;
+		virtual bool HasAnimationComponent(entt::entity entity) override;
+		virtual bool HasEntityTagComponent(entt::entity entity) override;
 
 	private:
 		Scene* m_Scene;
-		std::vector<entt::entity> m_Entities; // Container for holding entities with specific components;
 	};
 
 }

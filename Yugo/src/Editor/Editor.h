@@ -76,6 +76,7 @@ namespace Yugo
 		void ShowFileDialogBox(const std::string& option, std::string& fullPath);
 		void ShowFolderMenuPopup(const std::string& folderPath);
 		void ShowHierarchyMenuPopup(entt::entity node);
+		void CreateWidget(const std::string& name, entt::entity node);
 
 		void CreateFrameBuffer(int width, int height);
 		void BindFrameBuffer();

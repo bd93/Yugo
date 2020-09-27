@@ -2,7 +2,7 @@
 #include "Events/Event.h"
 #include "Scene/Scene.h"
 #include "Core/Dispatcher.h"
-#include "WidgetComponent.h"
+#include "Components.h"
 
 
 namespace Yugo

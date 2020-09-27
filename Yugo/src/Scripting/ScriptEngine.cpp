@@ -38,7 +38,7 @@ namespace Yugo
 
 			GameObjectInterfaceImpl* gameObjectInterfaceImpl = new GameObjectInterfaceImpl();
 			gameObjectInterfaceImpl->SetScene(m_Scene);
-			::GameObject* gameObject = NewGameObject(gameObjectInterfaceImpl);
+			::GameObject* gameObject = NewGameObject(entity.GetEnttEntity(), gameObjectInterfaceImpl);
 			m_ScriptArray.Scripts[i]->SetGameObject(gameObject);
 			m_GameObjects.push_back(gameObject);
 			m_GameObjectInterfaceImpls.push_back(gameObjectInterfaceImpl);

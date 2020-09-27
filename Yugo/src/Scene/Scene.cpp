@@ -54,7 +54,7 @@ namespace Yugo
 	{
 		m_Camera->OnUpdate(ts);
 
-		auto view = m_Registry.view<TransformComponent>(entt::exclude<WidgetComponent>);
+		auto view = m_Registry.view<TransformComponent>(entt::exclude<SpriteComponent>);
 		for (auto entity : view)
 		{
 			auto& transform = view.get<TransformComponent>(entity);
@@ -97,16 +97,6 @@ namespace Yugo
 			{
 				auto& [mesh, transform] = view.get<MeshComponent, TransformComponent>(entity);
 				MeshRenderer::Render(mesh, transform, ResourceManager::GetShader("modelShader"));
-			}
-		}
-
-		// Render sprites
-		{
-			auto view = m_Registry.view<SpriteComponent, TransformComponent>(entt::exclude<WidgetComponent>);
-			for (auto entity : view)
-			{
-				auto& [sprite, transform] = view.get<SpriteComponent, TransformComponent>(entity);
-				SpriteRenderer::Render(sprite, transform, ResourceManager::GetShader("quadShader"));
 			}
 		}
 	}

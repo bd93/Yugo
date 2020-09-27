@@ -99,46 +99,62 @@ namespace Yugo
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
-
-        glEnable(GL_CULL_FACE);
-        TextRenderer::EnableBlend();
 	}
 
-	void TextRenderer::Render(const Shader& shader, const std::string& text, float x, float y, float scale, const glm::vec3& color)
+	void TextRenderer::Render(TextWidgetComponent& text, TransformComponent& transform, const Shader& shader)
 	{
+        EnableCullFace();
+        EnableBlend();
+
         // Activate corresponding render state	
         shader.Use();
-        shader.SetVec3("textColor", color);
+        shader.SetVec3("textColor", text.Color);
         shader.SetMat4("projection", s_Camera->GetProjectionMatrix());
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(s_VAO);
 
-        // Iterate through all characters
-        std::string::const_iterator c;
-        for (c = text.begin(); c != text.end(); c++)
-        {
-            Character ch = s_Characters[*c];
+        float x = transform.Position.x;
+        float y = transform.Position.y;
+        float scale = transform.Scale.y;
+        float textWidth = 0.0f;
 
-            float xpos = x + ch.Bearing.x * scale;
-            float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+        // Calculate text width (for text center position inside parent widget)
+        float xPosFirstCharBegin = text.Text.size() == 0 ? 0.0f : x;
+        float xPosLastCharEnd = xPosFirstCharBegin;
+        for (auto c : text.Text)
+        {
+            Character& ch = s_Characters[c];
+            xPosLastCharEnd += (ch.Advance >> 6) * scale;
+        }
+        textWidth = xPosLastCharEnd - xPosFirstCharBegin;
+        x -= textWidth / 2.0f; // Adjusted position for centered text
+
+        // Iterate through all characters
+        for (auto c : text.Text)
+        {
+            Character& ch = s_Characters[c];
+
+            float xPos = x + ch.Bearing.x * scale;
+            float yPos = y - ch.Size.y * scale - (ch.Size.y - ch.Bearing.y) * scale;
 
             float w = ch.Size.x * scale;
             float h = ch.Size.y * scale;
+
             // Update s_VBO for each character
             float vertices[6][4] = {
-                { xpos,     ypos + h,   0.0f, 0.0f },
-                { xpos,     ypos,       0.0f, 1.0f },
-                { xpos + w, ypos,       1.0f, 1.0f },
+                { xPos,     yPos + h,   0.0f, 0.0f },
+                { xPos,     yPos,       0.0f, 1.0f },
+                { xPos + w, yPos,       1.0f, 1.0f },
 
-                { xpos,     ypos + h,   0.0f, 0.0f },
-                { xpos + w, ypos,       1.0f, 1.0f },
-                { xpos + w, ypos + h,   1.0f, 0.0f }
+                { xPos,     yPos + h,   0.0f, 0.0f },
+                { xPos + w, yPos,       1.0f, 1.0f },
+                { xPos + w, yPos + h,   1.0f, 0.0f }
             };
             // Render glyph texture over quad
             glBindTexture(GL_TEXTURE_2D, ch.TextureID);
             // Update content of VBO memory
             glBindBuffer(GL_ARRAY_BUFFER, s_VBO);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices); // Be sure to use glBufferSubData and not glBufferData
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             // Render quad
@@ -148,6 +164,9 @@ namespace Yugo
         }
         glBindVertexArray(0);
         glBindTexture(GL_TEXTURE_2D, 0);
+
+        DisableCullFace();
+        DisableBlend();
 	}
 
     void TextRenderer::SetCamera(const sPtr<Camera>& camera)
@@ -175,6 +194,16 @@ namespace Yugo
 	{
 		glDisable(GL_DEPTH_TEST);
 	}
+
+    void TextRenderer::EnableCullFace()
+    {
+        glEnable(GL_CULL_FACE);
+    }
+
+    void TextRenderer::DisableCullFace()
+    {
+        glDisable(GL_CULL_FACE);
+    }
 
 	void TextRenderer::ClearColorBuffer(float r, float g, float b)
 	{

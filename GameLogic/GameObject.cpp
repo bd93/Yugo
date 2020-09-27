@@ -13,7 +13,7 @@ GameObject::GameObject(GameObjectInterface* gameObjectInterface)
 		s_GameObjectInterface = gameObjectInterface;
 }
 
-void GameObject::SetEntity(Yugo::Entity& entity)
+void GameObject::SetEntity(entt::entity entity)
 {
 	m_Entity = entity;
 }
@@ -28,7 +28,7 @@ std::vector<GameObject> GameObject::FindGameObjectsWithTag(const std::string& ta
 	for (auto& entity : entities)
 	{
 		GameObject gameObject;
-		gameObject.SetEntity(Yugo::Entity(entity, tagName, scene));
+		gameObject.SetEntity(entity);
 		auto& entityTagComponent = gameObject.GetComponent<EntityTagComponent>();
 
 		if (entityTagComponent.Name == tagName)
@@ -41,9 +41,10 @@ std::vector<GameObject> GameObject::FindGameObjectsWithTag(const std::string& ta
 
 extern "C"
 {
-	SCRIPT_API GameObject* CreateGameObject(GameObjectInterface* gameObjectInterface)
+	SCRIPT_API GameObject* CreateGameObject(entt::entity entity, GameObjectInterface* gameObjectInterface)
 	{
 		GameObject* gameObject = new GameObject(gameObjectInterface);
+		gameObject->SetEntity(entity);
 		return gameObject;
 	}
 

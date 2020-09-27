@@ -19,14 +19,20 @@ public:
 
 	virtual std::vector<entt::entity>& GetEntitiesWithEntityTagComponent() = 0;
 
-	virtual TransformComponent& GetTransformComponent(Yugo::Entity& entity) = 0;
-	virtual MeshComponent& GetMeshComponent(Yugo::Entity& entity) = 0;
-	virtual AnimationComponent& GetAnimationComponent(Yugo::Entity& entity) = 0;
-	virtual EntityTagComponent& GetEntityTagComponent(Yugo::Entity& entity) = 0;
+	virtual TransformComponent& GetTransformComponent(entt::entity entity) = 0;
+	virtual MeshComponent& GetMeshComponent(entt::entity entity) = 0;
+	virtual AnimationComponent& GetAnimationComponent(entt::entity entity) = 0;
+	virtual EntityTagComponent& GetEntityTagComponent(entt::entity entity) = 0;
 
-	virtual bool HasTransformComponent(Yugo::Entity& entity) = 0;
-	virtual bool HasMeshComponent(Yugo::Entity& entity) = 0;
-	virtual bool HasAnimationComponent(Yugo::Entity& entity) = 0;
+	virtual std::vector<CanvasWidgetComponent*>& GetCanvasWidgetComponentsInChildren(entt::entity entity) = 0;
+	virtual std::vector<ButtonWidgetComponent*>& GetButtonWidgetComponentsInChildren(entt::entity entity) = 0;
+	virtual std::vector<TextWidgetComponent*>& GetTextWidgetComponentsInChildren(entt::entity entity) = 0;
+	virtual std::vector<TransformComponent*>& GetTransformComponentsInChildren(entt::entity entity) = 0;
+
+	virtual bool HasTransformComponent(entt::entity entity) = 0;
+	virtual bool HasMeshComponent(entt::entity entity) = 0;
+	virtual bool HasAnimationComponent(entt::entity entity) = 0;
+	virtual bool HasEntityTagComponent(entt::entity entity) = 0;
 };
 
 

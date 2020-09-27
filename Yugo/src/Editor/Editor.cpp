@@ -558,8 +558,8 @@ namespace Yugo
 			
 			ImGui::NewLine();
 
-			// Show padding options for UI widgets
-			if (m_Scene->m_Registry.has<WidgetComponent>(m_SelectedSceneEntity))
+			// Show padding options for UI widgets with children
+			if (m_Scene->m_Registry.has<SpriteComponent>(m_SelectedSceneEntity))
 			{
 				auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(m_SelectedSceneEntity);
 				if (relationship.NumOfChildren != 0)
@@ -582,7 +582,8 @@ namespace Yugo
 						else
 							childPosY -= childTransform.Scale.y + padding[2];
 
-						childTransform.Position.x = transform.Position.x + padding[0]; // left
+						if (!m_Scene->m_Registry.has<TextWidgetComponent>(child))
+							childTransform.Position.x = transform.Position.x + padding[0]; // left
 						childTransform.Position.y = childPosY; // top
 						childTransform.Scale.x = widgetWidth;
 
@@ -594,6 +595,20 @@ namespace Yugo
 						index++;
 					}
 				}
+				ImGui::NewLine();
+			}
+			// Show text input for widget's text
+			if (m_Scene->m_Registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
+			{
+				static entt::entity previousEntity;
+				static char buf[64] = "";
+				auto& text = m_Scene->m_Registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
+				if (previousEntity != m_SelectedSceneEntity)
+					memset(buf, 0, 64 * sizeof(char));
+				if (ImGui::InputText("Text", buf, 64))
+					text.Text = std::string(buf);
+				previousEntity = m_SelectedSceneEntity;
+				ImGui::NewLine();
 			}
 
 			if (ImGui::RadioButton("Local", s_CurrentGizmoMode == ImGuizmo::LOCAL))
@@ -751,19 +766,43 @@ namespace Yugo
 									std::string assetFilePath(payloadData);
 									if (ResourceManager::HasTexture(assetFilePath))
 									{
-										sprite.Texture = ResourceManager::GetTexture(assetFilePath);
+										texture = ResourceManager::GetTexture(assetFilePath);
 									}
 									else
 									{
 										ResourceManager::AddTexture(assetFilePath, Texture(assetFilePath));
-										sprite.Texture = ResourceManager::GetTexture(assetFilePath);
+										texture = ResourceManager::GetTexture(assetFilePath);
 									}
+									sprite.HasTexture = true;
 								}
 								ImGui::EndDragDropTarget();
 							}
-						}
 
-						ImGui::Separator();
+							ImGui::Separator();
+
+							ImGui::Text("Color:");
+							static ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+							static ImVec4 ref_color_v(1.0f, 1.0f, 1.0f, 1.0f);
+							ImGuiColorEditFlags flags =
+								ImGuiColorEditFlags_AlphaPreview |
+								ImGuiColorEditFlags_AlphaBar |
+								ImGuiColorEditFlags_DisplayRGB |
+								ImGuiColorEditFlags_DisplayHex;
+							if (ImGui::ColorPicker4("My Color", (float*)&color, flags, &ref_color_v.x))
+							{
+								if (m_Scene->m_Registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
+								{
+									auto& text = m_Scene->m_Registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
+									text.Color = glm::vec4(color.x, color.y, color.z, color.w);
+								}
+								else
+								{
+									sprite.Color = glm::vec4(color.x, color.y, color.z, color.w);
+								}
+							}
+
+							ImGui::Separator();
+						}
 					}
 				}
 			}
@@ -1084,7 +1123,7 @@ namespace Yugo
 		float rotation[3];
 		float scale[3];
 		ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform.ModelMatrix), position, rotation, scale);
-		transform.DeltaPosition = glm::vec3(position[0] - transform.Position.x, position[1] - transform.Position.y, position[2] - transform.Position.z);
+		transform.DeltaPosition = glm::vec3(position[0] - transform.Position.x, position[1] - transform.Position.y, position[2] - transform.Position.z); // Capture the amount by which this widget has been moved
 		transform.Position = glm::vec3(position[0], position[1], position[2]);
 		transform.Rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
 		transform.Scale = glm::vec3(scale[0], scale[1], scale[2]);
@@ -1220,8 +1259,10 @@ namespace Yugo
 		{
 			if (ImGui::BeginMenu("New"))
 			{
-				if (ImGui::MenuItem("UI Widget")) { menuAction = "UI Widget"; }
-				if (ImGui::MenuItem("Sprite")) { menuAction = "Sprite"; }
+				if (ImGui::MenuItem("Canvas")) CreateWidget("Canvas", node);
+				if (ImGui::MenuItem("Button")) CreateWidget("Button", node);
+				if (ImGui::MenuItem("Text"))   CreateWidget("Text", node);
+
 				ImGui::EndMenu();
 			}
 			if (!isSceneRootNode && ImGui::MenuItem("Rename")) { menuAction = "Rename"; }
@@ -1232,7 +1273,6 @@ namespace Yugo
 		}
 
 		ImGui::PushID(stringNodeId.c_str());
-		if (menuAction == "UI Widget") { ImGui::OpenPopup("UI Widget"); }
 		if (menuAction == "Sprite") { ImGui::OpenPopup("Sprite"); }
 		if (menuAction == "Rename") { ImGui::OpenPopup("Rename"); }
 		if (menuAction == "Copy") // Currently only leaf nodes can be copied!!
@@ -1259,8 +1299,14 @@ namespace Yugo
 			if (m_Scene->m_Registry.has<SpriteComponent>(node))
 				m_Scene->m_Registry.emplace<SpriteComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<SpriteComponent>(node));
 
-			if (m_Scene->m_Registry.has<WidgetComponent>(node))
-				m_Scene->m_Registry.emplace<WidgetComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<WidgetComponent>(node));
+			if (m_Scene->m_Registry.has<CanvasWidgetComponent>(node))
+				m_Scene->m_Registry.emplace<CanvasWidgetComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<CanvasWidgetComponent>(node));
+
+			if (m_Scene->m_Registry.has<ButtonWidgetComponent>(node))
+				m_Scene->m_Registry.emplace<ButtonWidgetComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<ButtonWidgetComponent>(node));
+
+			if (m_Scene->m_Registry.has<TextWidgetComponent>(node))
+				m_Scene->m_Registry.emplace<TextWidgetComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<TextWidgetComponent>(node));
 
 			if (m_Scene->m_Registry.has<RelationshipComponent>(node))
 			{
@@ -1277,45 +1323,6 @@ namespace Yugo
 		}
 		if (menuAction == "Delete") { ImGui::OpenPopup("Delete"); }
 		if (menuAction == "Cancel") {}
-
-		if (ImGui::BeginPopup("UI Widget"))
-		{
-			ImGui::Text("Enter UI widget's name:");
-			ImGui::InputText("##uiWidgetName", newUiWidgetName, IM_ARRAYSIZE(newUiWidgetName));
-			if (ImGui::Button("OK"))
-			{
-				auto newWidget = m_Scene->CreateEntity();
-				
-				auto& tag = newWidget.AddComponent<EntityTagComponent>();
-				auto& transform = newWidget.AddComponent<TransformComponent>();
-				auto& relationship = newWidget.AddComponent<RelationshipComponent>();
-				auto& sprite = newWidget.AddComponent<SpriteComponent>();
-				auto& widget = newWidget.AddComponent<WidgetComponent>();
-				
-				transform.Position = glm::vec3(0.0f, 0.0f, 0.0f);
-				transform.Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
-				transform.Scale = glm::vec3(100.0f, 100.0f, 1.0f);
-				tag.Name = newUiWidgetName;
-				relationship.Parent = node;
-				SpriteRenderer::Submit(sprite);
-
-				if (node != entt::null)
-				{
-					auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
-					parentRelationship.Children.push_back(newWidget.GetEnttEntity());
-					parentRelationship.NumOfChildren++;
-				}
-
-				memset(newUiWidgetName, 0, 32 * sizeof(newUiWidgetName[0]));
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel"))
-			{
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
 
 		if (ImGui::BeginPopup("Sprite"))
 		{
@@ -1424,6 +1431,49 @@ namespace Yugo
 			ImGui::EndPopup();
 		}
 		ImGui::PopID();
+	}
+
+	void Editor::CreateWidget(const std::string& name, entt::entity node)
+	{
+		auto newWidget = m_Scene->CreateEntity();
+
+		auto& tag = newWidget.AddComponent<EntityTagComponent>();
+		auto& transform = newWidget.AddComponent<TransformComponent>();
+		auto& relationship = newWidget.AddComponent<RelationshipComponent>();
+		auto& sprite = newWidget.AddComponent<SpriteComponent>();
+		if (name == "Canvas")
+			newWidget.AddComponent<CanvasWidgetComponent>();
+		if (name == "Button")
+			newWidget.AddComponent<ButtonWidgetComponent>();
+		if (name == "Text")
+			newWidget.AddComponent<TextWidgetComponent>();
+
+		tag.Name = name;
+		relationship.Parent = node;
+		SpriteRenderer::Submit(sprite);
+
+		if (node != entt::null)
+		{
+			auto& parentTransform = m_Scene->m_Registry.get<TransformComponent>(node);
+			transform.Position = parentTransform.Position;
+			transform.Rotation = parentTransform.Rotation;
+			if (name == "Text")
+				transform.Position.x += parentTransform.Scale.x / 2.0f; // Pass center position so text can be rendered at centered position compared to parent widget
+
+			auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
+			parentRelationship.Children.push_back(newWidget.GetEnttEntity());
+			parentRelationship.NumOfChildren++;
+		}
+		else
+		{
+			transform.Position = glm::vec3(0.0f, 0.0f, 0.0f);
+			transform.Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+		}
+
+		if (name == "Text")
+			transform.Scale = glm::vec3(1.0f, 1.0f, 1.0f);
+		else
+			transform.Scale = glm::vec3(100.0f, 100.0f, 1.0f);
 	}
 
 	void Editor::CreateFrameBuffer(int width, int height)

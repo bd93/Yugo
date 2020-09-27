@@ -14,7 +14,7 @@ namespace Yugo
 
 	typedef ScriptArray (*CreateScripts)();
 	typedef void (*DeleteScripts)(ScriptArray);
-	typedef ::GameObject* (*CreateGameObject)(GameObjectInterfaceImpl*);
+	typedef ::GameObject* (*CreateGameObject)(entt::entity, GameObjectInterfaceImpl*);
 	typedef void (*DeleteGameObject)(::GameObject*);
 
 	class ScriptEngine

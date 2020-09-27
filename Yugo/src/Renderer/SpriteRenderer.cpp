@@ -31,6 +31,8 @@ namespace Yugo
 
 	void SpriteRenderer::Render(const SpriteComponent& sprite, const TransformComponent& transform, const Shader& shader)
 	{
+		EnableBlend();
+
 		shader.Use();
 
 		auto& modelMat = transform.ModelMatrix;
@@ -38,6 +40,7 @@ namespace Yugo
 
 		shader.SetMat4("model", modelMat);
 		shader.SetMat4("projection", projectionMat);
+		shader.SetVec4("color", sprite.Color);
 
 		glActiveTexture(GL_TEXTURE0);
 		sprite.Texture.Bind();
@@ -46,6 +49,8 @@ namespace Yugo
 		glDrawElements(GL_TRIANGLES, sprite.Indices.size(), GL_UNSIGNED_INT, 0);
 		//glDrawArrays(GL_TRIANGLES, 0, sprite.Vertices.size());
 		sprite.ArrayOfVertices->Unbind();
+
+		DisableBlend();
 	}
 
 	void SpriteRenderer::SetCamera(const sPtr<Camera>& camera)

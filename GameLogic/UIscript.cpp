@@ -10,14 +10,15 @@
 class UIscript : public Script
 {
 private:
-	std::vector<GameObject> Buttons;
+	//std::vector<sPtr<ButtonWidgetComponent>> m_Buttons;
+	std::vector<ButtonWidgetComponent*> m_Buttons;
 
 public:
 	UIscript() { m_ScriptFilePath = __FILE__; }
 
 	void OnStart() override
 	{
-		Buttons = GameObject::FindGameObjectsWithTag("button");
+		m_Buttons = m_GameObject->GetComponentsInChildren<ButtonWidgetComponent>();
 	}
 
 	void OnUpdate(float ts) override
@@ -32,10 +33,16 @@ public:
 			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
 			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
 			{
-				auto& transform = GetComponent<TransformComponent>();
-				if (IsMouseHoveringRect(transform))
+				auto& transform = m_GameObject->GetComponentsInChildren<TransformComponent>();
+				int index = 0;
+				for (auto& button : m_Buttons)
 				{
-					std::cout << "Levi klik!\n";
+					if (IsMouseHoveringRect(*transform[index]))
+					{
+						std::cout << "Levi klik!\n";
+						transform[index]->Scale.y += 5.0f;
+					}
+					index++;
 				}
 			}
 		}

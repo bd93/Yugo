@@ -25,11 +25,17 @@ namespace Yugo
 
 	void UserInterface::OnStart()
 	{
-		Shader uiShader(
+		Shader uiTexturedShader(
 			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_vertex.shader",
-			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_fragment.shader"
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_textured_fragment.shader"
 		);
-		ResourceManager::AddShader("uiShader", uiShader);
+		ResourceManager::AddShader("uiTexturedShader", uiTexturedShader);
+
+		Shader uiFlatColoredShader(
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_vertex.shader",
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_flat_colored_fragment.shader"
+		);
+		ResourceManager::AddShader("uiFlatColoredShader", uiFlatColoredShader);
 
 		Texture texture(
 			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Textures\\awesomeface.png"
@@ -48,7 +54,7 @@ namespace Yugo
 			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
 			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
 			{
-				auto view = m_Scene->m_Registry.view<WidgetComponent, SpriteComponent, TransformComponent>();
+				auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent>();
 				for (auto entity : view)
 				{
 					const auto& [sprite, transform] = view.get<SpriteComponent, TransformComponent>(entity);
@@ -63,17 +69,17 @@ namespace Yugo
 
 	void UserInterface::OnUpdate(float ts)
 	{
+		// In-order traversal (recursive method)
 		TraverseUpdateFun traverse = [&](entt::entity entity, TransformComponent& transform) {
-			// In order traversal (recursive method)
-			auto view = m_Scene->m_Registry.view<WidgetComponent, SpriteComponent, TransformComponent, RelationshipComponent>();
+			auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
 			auto& [relationship, nodeTransform] = view.get<RelationshipComponent, TransformComponent>(entity);
-			if (relationship.Parent == entt::null)
+			if (relationship.Parent == entt::null) // Update all parent widgets with scene root node as their parent
 			{
 				transform.ModelMatrix = glm::mat4(1.0f);
 				transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
 				transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
 			}
-			else
+			else // Update child widgets position with delta (the amount by which parent widget has been moved)
 			{
 				nodeTransform.Position += transform.DeltaPosition;
 				nodeTransform.ModelMatrix = glm::mat4(1.0f);
@@ -87,7 +93,8 @@ namespace Yugo
 			}
 		};
 
-		auto view = m_Scene->m_Registry.view<WidgetComponent, SpriteComponent, TransformComponent, RelationshipComponent>();
+		auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
+
 		for (auto entity : view)
 		{
 			auto& [relationship, transform] = view.get<RelationshipComponent, TransformComponent>(entity);
@@ -98,19 +105,32 @@ namespace Yugo
 
 	void UserInterface::OnRender()
 	{
+		// Level-order traversal (iterative method)
 		TraverseRenderFun traverse = [&](entt::entity entity) {
-			// Level order traversal (iterative method)
 			std::queue<entt::entity> queue;
 			queue.push(entity);
 			
-			auto view = m_Scene->m_Registry.view<WidgetComponent, SpriteComponent, TransformComponent, RelationshipComponent>();
+			auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
 
 			while (!queue.empty())
 			{
 				entity = queue.front();
 				queue.pop();
 				auto& [sprite, transform, relationship] = view.get<SpriteComponent, TransformComponent, RelationshipComponent>(entity);
-				SpriteRenderer::Render(sprite, transform, ResourceManager::GetShader("uiShader"));
+				
+				if (m_Scene->m_Registry.has<TextWidgetComponent>(entity))
+				{
+					auto& text = m_Scene->m_Registry.get<TextWidgetComponent>(entity);
+					TextRenderer::Render(text, transform, ResourceManager::GetShader("textShader"));
+				}
+				else
+				{
+					if (sprite.HasTexture)
+						SpriteRenderer::Render(sprite, transform, ResourceManager::GetShader("uiTexturedShader"));
+					else
+						SpriteRenderer::Render(sprite, transform, ResourceManager::GetShader("uiFlatColoredShader"));
+				}
+
 				for (auto child : relationship.Children)
 				{
 					queue.push(child);
@@ -118,7 +138,7 @@ namespace Yugo
 			}
 		};
 
-		auto view = m_Scene->m_Registry.view<WidgetComponent, SpriteComponent, TransformComponent, RelationshipComponent>();
+		auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
 		for (auto entity : view)
 			traverse(entity);
 	}

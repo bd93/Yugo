@@ -38,8 +38,9 @@ namespace Yugo
 			1, 2, 3
 		};
 
+		bool HasTexture = false;
 		Texture Texture;
-		glm::vec4 Color;
+		glm::vec4 Color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
 		sPtr<Buffer<Vertex1P1T>> VertexBuffer;
 		sPtr<Buffer<uint32_t>> IndexBuffer;
