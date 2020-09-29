@@ -198,14 +198,13 @@ namespace Yugo
 		}
 		ImGui::End();
 
+		ShowSceneWindow(); // Show ImGuizmo widget on entity click (inside ShowSceneWindow()) goes first becuase it manipulates entity's model matrix
 		if (!s_PlayMode)
 		{
 			ShowHierarchyWindow();
 			ShowInspectorWindow();
 			ShowProjectWindow();
 		}
-		ShowSceneWindow();
-		
 
 		ImGui::ShowDemoWindow();
 
@@ -558,44 +557,18 @@ namespace Yugo
 			
 			ImGui::NewLine();
 
-			// Show padding options for UI widgets with children
-			if (m_Scene->m_Registry.has<SpriteComponent>(m_SelectedSceneEntity))
+			// Show padding options for UI canvas widget
+			if (m_Scene->m_Registry.has<CanvasWidgetComponent>(m_SelectedSceneEntity))
 			{
-				auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(m_SelectedSceneEntity);
-				if (relationship.NumOfChildren != 0)
-				{					
-					static float padding[3] = { 0.0f, 0.0f, 0.0f }; // left, right, top
-					ImGui::InputFloat3("Padding", padding);
-					ImGui::NewLine();
-					
-					float widgetWidth = (transform.Position.x + transform.Scale.x - padding[1]) - (transform.Position.x + padding[0]);
-					float childPosY = transform.Position.y;
-					
-					int index = 0;
-					for (auto child : relationship.Children)
-					{
-						auto& childRelationship = m_Scene->m_Registry.get<RelationshipComponent>(child);
-						auto& childTransform = m_Scene->m_Registry.get<TransformComponent>(child);
-
-						if (index == 0)
-							childPosY -= padding[2]; // First button needs to be adjusted according to parent widget
-						else
-							childPosY -= childTransform.Scale.y + padding[2];
-
-						if (!m_Scene->m_Registry.has<TextWidgetComponent>(child))
-							childTransform.Position.x = transform.Position.x + padding[0]; // left
-						childTransform.Position.y = childPosY; // top
-						childTransform.Scale.x = widgetWidth;
-
-						// Model matrix needs to be updated because of ImGuizmo widget's model matrix manipulation
-						childTransform.ModelMatrix = glm::mat4(1.0f);
-						childTransform.ModelMatrix = glm::translate(childTransform.ModelMatrix, childTransform.Position);
-						childTransform.ModelMatrix = glm::scale(childTransform.ModelMatrix, childTransform.Scale);
-
-						index++;
-					}
-				}
-				ImGui::NewLine();
+				//auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(m_SelectedSceneEntity);
+				static float padding[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; // left, right, top, bottom
+				ImGui::InputFloat4("Padding", padding);
+				static int dimensions[2] = { 1, 1 };
+				ImGui::InputInt2("Rows x Columns", dimensions);
+				static float cellWidgetSize[2] = { 50.0f, 50.0f };
+				ImGui::InputFloat2("Cell Widget Size", cellWidgetSize);
+				if (ImGui::Button("Configure")) // Create canvas matrix widget
+					CreateCanvasMatrixWidget(dimensions, padding, cellWidgetSize, m_SelectedSceneEntity);
 			}
 			// Show text input for widget's text
 			if (m_Scene->m_Registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
@@ -898,6 +871,67 @@ namespace Yugo
 				ImGui::OpenPopup(std::to_string(rootId).c_str());
 			ShowHierarchyMenuPopup(entt::null);
 
+			auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent>();
+
+			TraverseFun traverse = [&](entt::entity entity) {
+
+				auto& [relationship, tag] = view.get<RelationshipComponent, EntityTagComponent>(entity);
+				if (relationship.NumOfChildren == 0) // Leaf node
+				{
+					ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+					const char* entityTag;
+					entityTag = tag.Name.c_str();
+					uint32_t entityId = rootId + (uint32_t)entity + 1;
+
+					if (selection == entityId)
+						nodeFlags |= ImGuiTreeNodeFlags_Selected;
+					ImGui::TreeNodeEx((void*)(uintptr_t)entityId, nodeFlags, entityTag);
+
+					if (ImGui::IsItemClicked())
+					{
+						m_SelectedSceneEntity = entity;
+						if (s_CurrentGizmoOperation == ImGuizmo::BOUNDS)
+							s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
+					}
+
+					if (ImGui::IsItemClicked(1))
+						ImGui::OpenPopup(std::to_string(entityId).c_str());
+					ShowHierarchyMenuPopup(entity);
+				}
+				else
+				{
+					ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_DefaultOpen;
+					uint32_t entityId = rootId + (uint32_t)entity + 1;
+
+					if (selection == entityId)
+						nodeFlags |= ImGuiTreeNodeFlags_Selected;
+
+					const char* entityTag;
+					entityTag = tag.Name.c_str();
+
+					bool rootNodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)entityId, nodeFlags, entityTag);
+
+					if (ImGui::IsItemClicked())
+					{
+						m_SelectedSceneEntity = entity;
+						if (s_CurrentGizmoOperation == ImGuizmo::BOUNDS)
+							s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
+					}
+
+					if (ImGui::IsItemClicked(1))
+						ImGui::OpenPopup(std::to_string(entityId).c_str());
+					ShowHierarchyMenuPopup(entity);
+
+					if (rootNodeOpen)
+					{
+						for (auto child : relationship.Children)
+							traverse(child);
+						ImGui::TreePop();
+					}
+				}
+			};
+
 			if (rootNodeOpen)
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()); // Increase spacing to differentiate leaves from expanded contents.
@@ -905,66 +939,6 @@ namespace Yugo
 				auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent>();
 				for (auto entity : view)
 				{
-					TraverseFun traverse = [&](entt::entity entity) {
-
-						auto& [relationship, tag] = view.get<RelationshipComponent, EntityTagComponent>(entity);
-						if (relationship.NumOfChildren == 0) // Leaf node
-						{
-							ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-
-							const char* entityTag;
-							entityTag = tag.Name.c_str();
-							uint32_t entityId = rootId + (uint32_t)entity + 1;
-
-							if (selection == entityId)
-								nodeFlags |= ImGuiTreeNodeFlags_Selected;
-							ImGui::TreeNodeEx((void*)(uintptr_t)entityId, nodeFlags, entityTag);
-
-							if (ImGui::IsItemClicked())
-							{
-								//nodeClicked = entityId;
-								m_SelectedSceneEntity = entity;
-								if (s_CurrentGizmoOperation == ImGuizmo::BOUNDS)
-									s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
-							}
-
-							if (ImGui::IsItemClicked(1))
-								ImGui::OpenPopup(std::to_string(entityId).c_str());
-							ShowHierarchyMenuPopup(entity);
-						}
-						else
-						{
-							ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_DefaultOpen;
-							uint32_t entityId = rootId + (uint32_t)entity + 1;
-
-							if (selection == entityId)
-								nodeFlags |= ImGuiTreeNodeFlags_Selected;
-
-							const char* entityTag;
-							entityTag = tag.Name.c_str();
-
-							bool rootNodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)entityId, nodeFlags, entityTag);
-
-							if (ImGui::IsItemClicked())
-							{
-								//nodeClicked = entityId;
-								m_SelectedSceneEntity = entity;
-								if (s_CurrentGizmoOperation == ImGuizmo::BOUNDS)
-									s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
-							}
-
-							if (ImGui::IsItemClicked(1))
-								ImGui::OpenPopup(std::to_string(entityId).c_str());
-							ShowHierarchyMenuPopup(entity);
-
-							if (rootNodeOpen)
-							{
-								for (auto child : relationship.Children)
-									traverse(child);
-								ImGui::TreePop();
-							}
-						}
-					};
 					auto& relationship = view.get<RelationshipComponent>(entity);
 					if (relationship.Parent == entt::null) // Recursive traverse only if entity's parent is root node (entt::null)
 						traverse(entity);
@@ -982,9 +956,6 @@ namespace Yugo
 				}
 
 				selection = nodeClicked;
-
-				//if (nodeClicked != 0)
-				//	selection = nodeClicked;
 
 				ImGui::PopStyleVar();
 				ImGui::TreePop();
@@ -1124,9 +1095,9 @@ namespace Yugo
 		float scale[3];
 		ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform.ModelMatrix), position, rotation, scale);
 		transform.DeltaPosition = glm::vec3(position[0] - transform.Position.x, position[1] - transform.Position.y, position[2] - transform.Position.z); // Capture the amount by which this widget has been moved
-		transform.Position = glm::vec3(position[0], position[1], position[2]);
-		transform.Rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
-		transform.Scale = glm::vec3(scale[0], scale[1], scale[2]);
+		//transform.Position = glm::vec3(position[0], position[1], position[2]);
+		//transform.Rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
+		//transform.Scale = glm::vec3(scale[0], scale[1], scale[2]);
 	}
 
 	void Editor::ShowFileDialogBox(const std::string& option, std::string& fullPath)
@@ -1275,52 +1246,7 @@ namespace Yugo
 		ImGui::PushID(stringNodeId.c_str());
 		if (menuAction == "Sprite") { ImGui::OpenPopup("Sprite"); }
 		if (menuAction == "Rename") { ImGui::OpenPopup("Rename"); }
-		if (menuAction == "Copy") // Currently only leaf nodes can be copied!!
-		{
-			auto copyEntity = m_Scene->CreateEntity();
-
-			// TODO: Try to use registry.visit instead of manually asking if entity has any of the following components!
-			//m_Scene->m_Registry.visit(node, [&](const auto componentTypeId) {
-			//	const auto type = entt::resolve_type(componentTypeId);
-			//});
-
-			if (m_Scene->m_Registry.has<EntityTagComponent>(node))
-				m_Scene->m_Registry.emplace<EntityTagComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<EntityTagComponent>(node));
-
-			if (m_Scene->m_Registry.has<TransformComponent>(node))
-				m_Scene->m_Registry.emplace<TransformComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<TransformComponent>(node));
-
-			if (m_Scene->m_Registry.has<MeshComponent>(node))
-				m_Scene->m_Registry.emplace<MeshComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<MeshComponent>(node));
-
-			if (m_Scene->m_Registry.has<BoundBoxComponent>(node))
-				m_Scene->m_Registry.emplace<BoundBoxComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<BoundBoxComponent>(node));
-
-			if (m_Scene->m_Registry.has<SpriteComponent>(node))
-				m_Scene->m_Registry.emplace<SpriteComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<SpriteComponent>(node));
-
-			if (m_Scene->m_Registry.has<CanvasWidgetComponent>(node))
-				m_Scene->m_Registry.emplace<CanvasWidgetComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<CanvasWidgetComponent>(node));
-
-			if (m_Scene->m_Registry.has<ButtonWidgetComponent>(node))
-				m_Scene->m_Registry.emplace<ButtonWidgetComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<ButtonWidgetComponent>(node));
-
-			if (m_Scene->m_Registry.has<TextWidgetComponent>(node))
-				m_Scene->m_Registry.emplace<TextWidgetComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<TextWidgetComponent>(node));
-
-			if (m_Scene->m_Registry.has<RelationshipComponent>(node))
-			{
-				m_Scene->m_Registry.emplace<RelationshipComponent>(copyEntity.GetEnttEntity(), m_Scene->m_Registry.get<RelationshipComponent>(node));
-
-				auto& nodeRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
-				if (nodeRelationship.Parent != entt::null)
-				{
-					auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(nodeRelationship.Parent);
-					parentRelationship.Children.push_back(copyEntity.GetEnttEntity());
-					parentRelationship.NumOfChildren++;
-				}
-			}
-		}
+		if (menuAction == "Copy")	{ CreateCopyEntity(node); }
 		if (menuAction == "Delete") { ImGui::OpenPopup("Delete"); }
 		if (menuAction == "Cancel") {}
 
@@ -1396,7 +1322,7 @@ namespace Yugo
 					m_SelectedSceneEntity = entt::null;
 
 				TraverseFun Traverse = [&](entt::entity entity) {
-					auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(entity);
+					auto relationship = m_Scene->m_Registry.get<RelationshipComponent>(entity);
 					for (auto child : relationship.Children)
 						Traverse(child);
 
@@ -1474,6 +1400,156 @@ namespace Yugo
 			transform.Scale = glm::vec3(1.0f, 1.0f, 1.0f);
 		else
 			transform.Scale = glm::vec3(100.0f, 100.0f, 1.0f);
+	}
+
+	void Editor::CreateCanvasMatrixWidget(int dimensions[2], float padding[4], float cellWidgetSize[2], entt::entity parent)
+	{
+		int rows    = dimensions[0];
+		int columns = dimensions[1];
+
+		float paddingLeft   = padding[0];
+		float paddingRight  = padding[1];
+		float paddingTop    = padding[2];
+		float paddingBottom = padding[3];
+
+		float cellWidgetWidth  = cellWidgetSize[0];
+		float cellWidgetHeight = cellWidgetSize[1];
+
+		float widgetWidth = paddingLeft + paddingRight + (columns - 1) * paddingLeft + columns * cellWidgetWidth;
+		float widgetHeight = paddingTop + paddingBottom + (rows - 1) * paddingTop + rows * cellWidgetHeight;
+
+		for (int row = 0; row < rows; ++row)
+		{
+			for (int column = 0; column < columns; ++column)
+			{
+				// Cell canvas widget is a slot (placeholder) for widgets such as buttons
+				auto canvas = m_Scene->CreateEntity();
+				auto& cellWidgetCanvas = canvas.AddComponent<CanvasWidgetComponent>();
+				auto& cellWidgetRelationship = canvas.AddComponent<RelationshipComponent>();
+				auto& cellWidgetSprite = canvas.AddComponent<SpriteComponent>();
+				auto& cellWidgetTransform = canvas.AddComponent<TransformComponent>();
+				auto& entityTagComponent = canvas.AddComponent<EntityTagComponent>();
+
+				entityTagComponent.Name = "Canvas";
+				cellWidgetSprite.Color = glm::vec4(0.8f, 0.8f, 0.8f, 0.7f);
+				SpriteRenderer::Submit(cellWidgetSprite);
+
+				auto& transform = m_Scene->m_Registry.get<TransformComponent>(parent);
+				if (column == 0)
+					cellWidgetTransform.Position.x = transform.Position.x + paddingLeft;
+				else
+					cellWidgetTransform.Position.x = transform.Position.x + (column + 1) * paddingLeft + column * cellWidgetWidth;
+				if (row == 0)
+					cellWidgetTransform.Position.y = transform.Position.y - paddingTop;
+				else
+					cellWidgetTransform.Position.y = transform.Position.y - (row + 1) * paddingTop - row * cellWidgetHeight;
+				cellWidgetTransform.Scale.x = cellWidgetWidth;
+				cellWidgetTransform.Scale.y = cellWidgetHeight;
+
+				cellWidgetRelationship.Parent = m_SelectedSceneEntity;
+				auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(parent);
+				relationship.Children.push_back(canvas.GetEnttEntity());
+				relationship.NumOfChildren++;
+			}
+		}
+
+		auto& transform = m_Scene->m_Registry.get<TransformComponent>(parent);
+		transform.Scale.x = widgetWidth;
+		transform.Scale.y = widgetHeight;
+	
+		ImGui::NewLine();
+	}
+
+	void Editor::CreateCopyEntity(entt::entity node) // Entity can have many children or none
+	{
+		using TraverseFun = std::function<void(entt::entity, entt::entity)>;
+
+		TraverseFun traverse = [&](entt::entity node, entt::entity copyNode) {
+
+			auto nodeRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node); // Get by value because entt library change this component under the hood when new component is added to registry (TODO: Check this weird feature!)
+
+			for (auto child : nodeRelationship.Children)
+			{
+				auto copyEntity = m_Scene->m_Registry.create();
+
+				if (m_Scene->m_Registry.has<EntityTagComponent>(child))
+					m_Scene->m_Registry.emplace<EntityTagComponent>(copyEntity, m_Scene->m_Registry.get<EntityTagComponent>(child));
+
+				if (m_Scene->m_Registry.has<TransformComponent>(child))
+					m_Scene->m_Registry.emplace<TransformComponent>(copyEntity, m_Scene->m_Registry.get<TransformComponent>(child));
+
+				if (m_Scene->m_Registry.has<MeshComponent>(child))
+					m_Scene->m_Registry.emplace<MeshComponent>(copyEntity, m_Scene->m_Registry.get<MeshComponent>(child));
+
+				if (m_Scene->m_Registry.has<BoundBoxComponent>(child))
+					m_Scene->m_Registry.emplace<BoundBoxComponent>(copyEntity, m_Scene->m_Registry.get<BoundBoxComponent>(child));
+
+				if (m_Scene->m_Registry.has<SpriteComponent>(child))
+					m_Scene->m_Registry.emplace<SpriteComponent>(copyEntity, m_Scene->m_Registry.get<SpriteComponent>(child));
+
+				if (m_Scene->m_Registry.has<CanvasWidgetComponent>(child))
+					m_Scene->m_Registry.emplace<CanvasWidgetComponent>(copyEntity, m_Scene->m_Registry.get<CanvasWidgetComponent>(child));
+
+				if (m_Scene->m_Registry.has<ButtonWidgetComponent>(child))
+					m_Scene->m_Registry.emplace<ButtonWidgetComponent>(copyEntity, m_Scene->m_Registry.get<ButtonWidgetComponent>(child));
+
+				if (m_Scene->m_Registry.has<TextWidgetComponent>(child))
+					m_Scene->m_Registry.emplace<TextWidgetComponent>(copyEntity, m_Scene->m_Registry.get<TextWidgetComponent>(child));
+
+				auto& copyRelationship = m_Scene->m_Registry.emplace<RelationshipComponent>(copyEntity);
+				copyRelationship.Parent = copyNode; // copyNode is the parent of copyEntity
+				auto& copyParentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(copyNode);
+				copyParentRelationship.Children.push_back(copyEntity);
+				copyParentRelationship.NumOfChildren++;
+			}
+
+			int index = 0;
+			auto& copyNodeRelationship = m_Scene->m_Registry.get<RelationshipComponent>(copyNode);
+			for (auto child : nodeRelationship.Children)
+			{
+				auto copyChild = copyNodeRelationship.Children[index];
+				traverse(child, copyChild);
+				index++;
+			}
+		};
+
+		// Create copy root (starting) node
+		auto copyNode = m_Scene->m_Registry.create();
+		auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
+		if (relationship.Parent != entt::null) // If node's parent isn't scene root node
+		{
+			auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(relationship.Parent);
+			parentRelationship.Children.push_back(copyNode); // Push copy node to parent's children
+			parentRelationship.NumOfChildren++;
+		}
+		if (m_Scene->m_Registry.has<EntityTagComponent>(node))
+			m_Scene->m_Registry.emplace<EntityTagComponent>(copyNode, m_Scene->m_Registry.get<EntityTagComponent>(node));
+
+		if (m_Scene->m_Registry.has<TransformComponent>(node))
+			m_Scene->m_Registry.emplace<TransformComponent>(copyNode, m_Scene->m_Registry.get<TransformComponent>(node));
+
+		if (m_Scene->m_Registry.has<MeshComponent>(node))
+			m_Scene->m_Registry.emplace<MeshComponent>(copyNode, m_Scene->m_Registry.get<MeshComponent>(node));
+
+		if (m_Scene->m_Registry.has<BoundBoxComponent>(node))
+			m_Scene->m_Registry.emplace<BoundBoxComponent>(copyNode, m_Scene->m_Registry.get<BoundBoxComponent>(node));
+
+		if (m_Scene->m_Registry.has<SpriteComponent>(node))
+			m_Scene->m_Registry.emplace<SpriteComponent>(copyNode, m_Scene->m_Registry.get<SpriteComponent>(node));
+
+		if (m_Scene->m_Registry.has<CanvasWidgetComponent>(node))
+			m_Scene->m_Registry.emplace<CanvasWidgetComponent>(copyNode, m_Scene->m_Registry.get<CanvasWidgetComponent>(node));
+
+		if (m_Scene->m_Registry.has<ButtonWidgetComponent>(node))
+			m_Scene->m_Registry.emplace<ButtonWidgetComponent>(copyNode, m_Scene->m_Registry.get<ButtonWidgetComponent>(node));
+
+		if (m_Scene->m_Registry.has<TextWidgetComponent>(node))
+			m_Scene->m_Registry.emplace<TextWidgetComponent>(copyNode, m_Scene->m_Registry.get<TextWidgetComponent>(node));
+
+		//auto& copyRelationship = m_Scene->m_Registry.emplace<RelationshipComponent>(copyNode, m_Scene->m_Registry.get<RelationshipComponent>(node));
+		auto& copyRelationship = m_Scene->m_Registry.emplace<RelationshipComponent>(copyNode);
+		copyRelationship.Parent = relationship.Parent;
+		traverse(node, copyNode);
 	}
 
 	void Editor::CreateFrameBuffer(int width, int height)

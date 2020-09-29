@@ -75,11 +75,11 @@ namespace Yugo
 
 	struct TransformComponent
 	{
-		glm::vec3 Position;
-		glm::vec3 Rotation;
-		glm::vec3 Scale;
+		glm::vec3 Position = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 Rotation = glm::vec3(0.0f, 0.0f, 0.0f);
+		glm::vec3 Scale = glm::vec3(1.0f, 1.0f, 1.0f);
 		glm::mat4 ModelMatrix;
-		glm::vec3 DeltaPosition = { 0.0f, 0.0f, 0.0f };
+		glm::vec3 DeltaPosition = glm::vec3(0.0f, 0.0f, 0.0f);
 	};
 
 	// Axis Aligned Bounding Box
@@ -224,9 +224,12 @@ namespace Yugo
 
 	struct RelationshipComponent
 	{
-		std::size_t NumOfChildren{ 0 };
+		std::size_t NumOfChildren = 0;
 		std::vector<entt::entity> Children;
-		entt::entity Parent{entt::null};
+		entt::entity Parent = entt::null;
+
+		RelationshipComponent() = default;
+		RelationshipComponent(const RelationshipComponent& other) = default;
 	};
 
 }
