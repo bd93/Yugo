@@ -77,7 +77,7 @@ namespace Yugo
 		void ShowFolderMenuPopup(const std::string& folderPath);
 		void ShowHierarchyMenuPopup(entt::entity node);
 
-		void CreateWidget(const std::string& name, entt::entity node);
+		void CreateWidget(const std::string& name, entt::entity parent);
 		void CreateCanvasMatrixWidget(int dimensions[2], float padding[4], float cellWidgetSize[2], entt::entity parent);
 		void CreateCopyEntity(entt::entity node);
 

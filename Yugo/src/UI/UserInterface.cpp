@@ -10,8 +10,9 @@
 
 namespace Yugo
 {
-	using TraverseUpdateFun = std::function<void(entt::entity, TransformComponent&)>;
-	using TraverseRenderFun = std::function<void(entt::entity)>;
+	using TraverseFun = std::function<void(entt::entity)>;
+	//using TraverseUpdateFun = std::function<void(entt::entity, TransformComponent&)>;
+	//using TraverseRenderFun = std::function<void(entt::entity)>;
 
 	UserInterface::UserInterface(sPtr<Scene>& scene)
 		: m_Scene(scene)
@@ -69,44 +70,33 @@ namespace Yugo
 
 	void UserInterface::OnUpdate(float ts)
 	{
-		// In-order traversal (recursive method)
-		TraverseUpdateFun traverse = [&](entt::entity entity, TransformComponent& transform) {
+		// Pre-order traversal (recursive method)
+		TraverseFun traverse = [&](entt::entity entity) {
 			auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
-			auto& [relationship, nodeTransform] = view.get<RelationshipComponent, TransformComponent>(entity);
-			if (relationship.Parent == entt::null) // Update all parent widgets with scene root node as their parent
-			{
-				transform.ModelMatrix = glm::mat4(1.0f);
-				transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
-				transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
-			}
-			else // Update child widgets position with delta (the amount by which parent widget has been moved)
-			{
-				nodeTransform.Position += transform.DeltaPosition;
-				nodeTransform.ModelMatrix = glm::mat4(1.0f);
-				nodeTransform.ModelMatrix = glm::translate(nodeTransform.ModelMatrix, nodeTransform.Position);
-				nodeTransform.ModelMatrix = glm::scale(nodeTransform.ModelMatrix, nodeTransform.Scale);
-			}
+			auto& [relationship, transform] = view.get<RelationshipComponent, TransformComponent>(entity);
+
+			transform.Position += transform.DeltaPosition;
+			transform.ModelMatrix = glm::mat4(1.0f);
+			transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
+			transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
 
 			for (auto child : relationship.Children)
-			{
-				traverse(child, transform);
-			}
+				traverse(child);
 		};
 
 		auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
-
 		for (auto entity : view)
 		{
-			auto& [relationship, transform] = view.get<RelationshipComponent, TransformComponent>(entity);
-			if (relationship.Parent == entt::null) // Update only root widgets, which parent is entt::null (scene root node)
-				traverse(entity, transform);
+			auto& relationship = view.get<RelationshipComponent>(entity);
+			if (relationship.Parent == entt::null) // Pass only child of root node (scene node)
+				traverse(entity);
 		}
 	}
 
 	void UserInterface::OnRender()
 	{
 		// Level-order traversal (iterative method)
-		TraverseRenderFun traverse = [&](entt::entity entity) {
+		TraverseFun traverse = [&](entt::entity entity) {
 			std::queue<entt::entity> queue;
 			queue.push(entity);
 			

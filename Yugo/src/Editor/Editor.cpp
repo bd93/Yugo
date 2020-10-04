@@ -567,7 +567,7 @@ namespace Yugo
 				ImGui::InputInt2("Rows x Columns", dimensions);
 				static float cellWidgetSize[2] = { 50.0f, 50.0f };
 				ImGui::InputFloat2("Cell Widget Size", cellWidgetSize);
-				if (ImGui::Button("Configure")) // Create canvas matrix widget
+				if (ImGui::Button("Create")) // Create canvas matrix widget
 					CreateCanvasMatrixWidget(dimensions, padding, cellWidgetSize, m_SelectedSceneEntity);
 			}
 			// Show text input for widget's text
@@ -875,7 +875,15 @@ namespace Yugo
 
 			TraverseFun traverse = [&](entt::entity entity) {
 
-				auto& [relationship, tag] = view.get<RelationshipComponent, EntityTagComponent>(entity);
+				auto& tag = view.get<EntityTagComponent>(entity);
+				/*
+				Bug is triggered in the following situation:
+				If I get relationship by reference, then there shouldn't be any new entity added to the registry.
+				If it isn't the case, then relationship reference has trash values for parent entity as well as number of children value;
+				In the line "ShowHierarchyMenuPopup(entity);" a new entity is added, thus registry is changed;
+				Because of that I return relationship by value (anyway I don't have to modify relationship in this method);
+				*/
+				auto relationship = view.get<RelationshipComponent>(entity);
 				if (relationship.NumOfChildren == 0) // Leaf node
 				{
 					ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
@@ -925,6 +933,7 @@ namespace Yugo
 
 					if (rootNodeOpen)
 					{
+						auto relationship = view.get<RelationshipComponent>(entity);
 						for (auto child : relationship.Children)
 							traverse(child);
 						ImGui::TreePop();
@@ -936,7 +945,7 @@ namespace Yugo
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()); // Increase spacing to differentiate leaves from expanded contents.
 
-				auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent>();
+				auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent, TransformComponent>();
 				for (auto entity : view)
 				{
 					auto& relationship = view.get<RelationshipComponent>(entity);
@@ -946,14 +955,9 @@ namespace Yugo
 
 				// Nodes will be selected either by clicking on it or by clicking on model in scene
 				if (m_SelectedSceneEntity != entt::null)
-				{
 					nodeClicked = (uint32_t)m_SelectedSceneEntity + 2; // 0 and 1 are already reserved => Id = 0 for entt::null, Id = 1 for root node (scene name)
-				}
 				else
-				{
-					if (nodeClicked != rootId)
-						nodeClicked = 0;
-				}
+					if (nodeClicked != rootId) nodeClicked = 0;
 
 				selection = nodeClicked;
 
@@ -1063,11 +1067,11 @@ namespace Yugo
 		ImGuizmo::BeginFrame();
 		ImGuizmo::SetOrthographic(true);
 
-		if (ImGui::IsKeyPressed((int)KEY_T))
+		if (ImGui::IsKeyDown((int)KEY_LEFT_CONTROL) && ImGui::IsKeyPressed((int)KEY_T))
 			s_CurrentGizmoOperation = ImGuizmo::TRANSLATE;
-		if (ImGui::IsKeyPressed((int)KEY_R))
+		if (ImGui::IsKeyDown((int)KEY_LEFT_CONTROL) && ImGui::IsKeyPressed((int)KEY_R))
 			s_CurrentGizmoOperation = ImGuizmo::ROTATE;
-		if (ImGui::IsKeyPressed((int)KEY_Y))
+		if (ImGui::IsKeyDown((int)KEY_LEFT_CONTROL) && ImGui::IsKeyPressed((int)KEY_Y))
 			s_CurrentGizmoOperation = ImGuizmo::SCALE;
 
 		ImGuizmo::SetDrawlist();
@@ -1094,10 +1098,25 @@ namespace Yugo
 		float rotation[3];
 		float scale[3];
 		ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform.ModelMatrix), position, rotation, scale);
-		transform.DeltaPosition = glm::vec3(position[0] - transform.Position.x, position[1] - transform.Position.y, position[2] - transform.Position.z); // Capture the amount by which this widget has been moved
-		//transform.Position = glm::vec3(position[0], position[1], position[2]);
-		//transform.Rotation = glm::vec3(rotation[0], rotation[1], rotation[2]);
-		//transform.Scale = glm::vec3(scale[0], scale[1], scale[2]);
+		auto deltaPosition = glm::vec3(position[0] - transform.Position.x, position[1] - transform.Position.y, position[2] - transform.Position.z); // Capture the amount by which this widget has been moved
+
+		// Update delta position for all children
+		auto view = m_Scene->m_Registry.view<RelationshipComponent, TransformComponent>();
+		using TraverseFun = std::function<void(entt::entity)>;
+		TraverseFun traverse = [&](entt::entity entity) {
+			auto& relationship = view.get<RelationshipComponent>(entity);
+			for (auto child : relationship.Children)
+			{
+				auto& childTransform = view.get<TransformComponent>(child);
+				//childTransform.DeltaPosition = transform.DeltaPosition;
+				childTransform.DeltaPosition = deltaPosition;
+			}
+			for (auto child : relationship.Children)
+			{
+				traverse(child);
+			}
+		};
+		traverse(m_SelectedSceneEntity);
 	}
 
 	void Editor::ShowFileDialogBox(const std::string& option, std::string& fullPath)
@@ -1359,7 +1378,7 @@ namespace Yugo
 		ImGui::PopID();
 	}
 
-	void Editor::CreateWidget(const std::string& name, entt::entity node)
+	void Editor::CreateWidget(const std::string& name, entt::entity parent)
 	{
 		auto newWidget = m_Scene->CreateEntity();
 
@@ -1375,18 +1394,18 @@ namespace Yugo
 			newWidget.AddComponent<TextWidgetComponent>();
 
 		tag.Name = name;
-		relationship.Parent = node;
+		relationship.Parent = parent;
 		SpriteRenderer::Submit(sprite);
 
-		if (node != entt::null)
+		if (parent != entt::null)
 		{
-			auto& parentTransform = m_Scene->m_Registry.get<TransformComponent>(node);
+			auto& parentTransform = m_Scene->m_Registry.get<TransformComponent>(parent);
 			transform.Position = parentTransform.Position;
 			transform.Rotation = parentTransform.Rotation;
 			if (name == "Text")
 				transform.Position.x += parentTransform.Scale.x / 2.0f; // Pass center position so text can be rendered at centered position compared to parent widget
 
-			auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
+			auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(parent);
 			parentRelationship.Children.push_back(newWidget.GetEnttEntity());
 			parentRelationship.NumOfChildren++;
 		}
@@ -1424,6 +1443,7 @@ namespace Yugo
 			{
 				// Cell canvas widget is a slot (placeholder) for widgets such as buttons
 				auto canvas = m_Scene->CreateEntity();
+
 				auto& cellWidgetCanvas = canvas.AddComponent<CanvasWidgetComponent>();
 				auto& cellWidgetRelationship = canvas.AddComponent<RelationshipComponent>();
 				auto& cellWidgetSprite = canvas.AddComponent<SpriteComponent>();
@@ -1446,7 +1466,8 @@ namespace Yugo
 				cellWidgetTransform.Scale.x = cellWidgetWidth;
 				cellWidgetTransform.Scale.y = cellWidgetHeight;
 
-				cellWidgetRelationship.Parent = m_SelectedSceneEntity;
+				//cellWidgetRelationship.Parent = m_SelectedSceneEntity;
+				cellWidgetRelationship.Parent = parent;
 				auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(parent);
 				relationship.Children.push_back(canvas.GetEnttEntity());
 				relationship.NumOfChildren++;
