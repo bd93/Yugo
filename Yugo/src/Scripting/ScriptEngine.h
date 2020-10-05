@@ -10,13 +10,19 @@
 
 namespace Yugo
 {
-	class Editor;
-
+	// Function pointers for imported functions from GameLogic.dll
 	typedef ScriptArray (*CreateScripts)();
 	typedef void (*DeleteScripts)(ScriptArray);
 	typedef ::GameObject* (*CreateGameObject)(entt::entity, GameObjectInterfaceImpl*);
 	typedef void (*DeleteGameObject)(::GameObject*);
+	
+	class Editor;
 
+	/*
+	This class represents core engine for running c++ "scripts";
+	The main goal of this class is to invoke dll functions that create objects on the dll heap. Then this class
+	ties these objects with scripts through abstract classes, such as "GameObjectInterfaceImpl";
+	*/
 	class ScriptEngine
 	{
 		friend class Editor;

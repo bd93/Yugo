@@ -22,7 +22,7 @@ namespace Yugo
 		friend class Entity;
 		friend class Editor; // World editor UI
 		friend class UserInterface; // Game UI
-	
+
 	public:
 		Scene();
 
@@ -42,7 +42,6 @@ namespace Yugo
 
 	private:
 		entt::registry m_Registry; // Registry is kind of in-memory database storage for entities and components
-		entt::entity m_SelectedEntity; // Entity which is selected with mouse ray, on left click
 		sPtr<Camera> m_Camera;
 		MouseRay m_MouseRay;
 	};

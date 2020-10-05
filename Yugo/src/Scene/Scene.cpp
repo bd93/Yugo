@@ -17,7 +17,6 @@ namespace Yugo
 {
 
 	Scene::Scene()
-		: m_SelectedEntity(entt::null)
 	{
 		m_Camera = sPtrCreate<Camera>(glm::vec3(100.0f, 100.0f, 100.0f));
 	}

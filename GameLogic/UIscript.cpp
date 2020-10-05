@@ -39,7 +39,6 @@ public:
 				{
 					if (IsMouseHoveringRect(*transform[index]))
 					{
-						std::cout << "Levi klik!\n";
 						transform[index]->Scale.y += 5.0f;
 					}
 					index++;

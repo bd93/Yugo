@@ -186,7 +186,6 @@ namespace Yugo
 		float edgeX1 = spritePosX;
 		float edgeX2 = spritePosX + spriteWidth;
 
-		//if (s_MouseEyeSpaceCoords.x > edgeX1 && s_MouseEyeSpaceCoords.x < edgeX2 && std::abs(s_MouseEyeSpaceCoords.y) > std::abs(edgeY1) && glm::abs(s_MouseEyeSpaceCoords.y) < glm::abs(edgeY2))
 		if (s_MouseEyeSpaceCoords.x > edgeX1 && s_MouseEyeSpaceCoords.x < edgeX2 && s_MouseEyeSpaceCoords.y < edgeY1 && s_MouseEyeSpaceCoords.y > edgeY2)
 			return true;
 		else
