@@ -1,12 +1,12 @@
 #include "pch.h"
 #include "Editor.h"
-#include "Animation/AnimationComponent.h"
+#include "Animation/Components.h"
 #include "Animation/Animation.h"
 #include "Scripting/ScriptComponent.h"
 #include "Core/Time.h"
 #include "Core/ModelImporter.h"
 #include "Renderer/SpriteRenderer.h"
-#include "UI/Widget.h"
+#include "GameUI/Widget.h"
 
 #include <ImGuizmo.h>
 #include <windows.h>

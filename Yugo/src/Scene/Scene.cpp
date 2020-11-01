@@ -9,7 +9,7 @@
 #include "Serializer/Serializer.h"
 #include "Scripting/ScriptComponent.h"
 #include "Renderer/SpriteRenderer.h"
-#include "UI/UserInterface.h"
+#include "GameUI/UserInterface.h"
 #include "Renderer/TextRenderer.h"
 
 
@@ -21,6 +21,14 @@ namespace Yugo
 		m_Camera = sPtrCreate<Camera>(glm::vec3(100.0f, 100.0f, 100.0f));
 	}
 
+	/**
+	 * @brief Method to be called during application OnStart stage.
+     *
+     * This method adds necessary assets to ResourceManager's unordered map static members.
+     * ResourceManager can be used anywhere in code in order to retreive assets.
+     * The idea is to load necessary assets only once at the beginning of app and use it later.
+	 * It also initialize camera and sets it in renderers.
+     */
 	void Scene::OnStart()
 	{
 		Shader modelShader(
@@ -41,6 +49,13 @@ namespace Yugo
 		Renderer2D::SetCamera(m_Camera);
 	}
 
+	/**
+     * @brief Method to be called during application OnEvent stage.
+     *
+     * This method deals with events, such as mouse click, button press, etc.
+	 *
+	 * @param event Base class for all types of events.
+     */
 	void Scene::OnEvent(const Event& event)
 	{
 		if (event.GetEventType() == EventType::MouseButtonPress)
@@ -49,9 +64,16 @@ namespace Yugo
 		}
 	}
 
-	void Scene::OnUpdate(float ts)
+	/**
+     * @brief Method to be called during application OnUpdate stage.
+     *
+     * This method updates camera and transform components each frame.
+	 *
+	 * @param timeStep Duration of each frame.
+     */
+	void Scene::OnUpdate(float timeStep)
 	{
-		m_Camera->OnUpdate(ts);
+		m_Camera->OnUpdate(timeStep);
 
 		auto view = m_Registry.view<TransformComponent>(entt::exclude<SpriteComponent>);
 		for (auto entity : view)
@@ -67,6 +89,11 @@ namespace Yugo
 		}
 	}
 
+	/**
+     * @brief Method to be called during application OnRender stage.
+     *
+     * This method updates camera and transform components each frame.
+     */
 	void Scene::OnRender()
 	{
 		MeshRenderer::ClearColorBuffer(0.3f, 0.3f, 0.3f);
@@ -100,10 +127,22 @@ namespace Yugo
 		}
 	}
 
+	/**
+     * @brief Method to be called during application OnShutdown stage.
+     *
+     * @note Currently there is nothing to put here.
+     */
 	void Scene::OnShutdown()
 	{
 	}
 
+	/**
+	 * @brief Save scene to json file.
+	 *
+	 * Serialize components to json file and keep track of entities which these components are attached to.
+	 *
+	 * @param filePath Path to json file.
+	 */
 	void Scene::SaveScene(const std::string& filePath)
 	{
 		nlohmann::json jsonData;
@@ -120,6 +159,13 @@ namespace Yugo
 		out << std::setw(4) << jsonData;
 	}
 
+	/**
+	 * @brief Load scene from json file.
+	 *
+	 * Read components from a file, create entities and attach components to them.
+	 *
+	 * @param filePath Path to json file.
+	 */
 	void Scene::LoadScene(const std::string& filePath)
 	{
 		m_Registry.clear();
@@ -159,16 +205,18 @@ namespace Yugo
 		}
 	}
 
+	/**
+     * @brief Creates custom Entity object plus entity in registry.
+     *
+     * Entity object is useful because it's more intuitive to call 
+	 * entityObject.GetComponent<ComponentType>() rather than m_Scene->m_Registry.get<ComponentType>(nativeEnttEntity).
+	 *
+	 * @param name Name of the entity which will be in EntityTagComponent.
+     */
 	Entity Scene::CreateEntity(const std::string& name)
 	{
 		Entity entity = {m_Registry.create(), name, this };
 		return entity;
-	}
-
-	// TEMPORARY!!!
-	entt::registry& Scene::GetRegistry()
-	{
-		return m_Registry;
 	}
 
 }

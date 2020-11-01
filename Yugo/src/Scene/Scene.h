@@ -11,16 +11,17 @@ namespace Yugo
 	class Entity;
 	class UserInterface;
 
-	/*
-	This class represents renderable scene;
-	Entities, which are just unsigned integer IDs, can have attached components,
-	which define behavior for specific entity. 
-	Components contain only data, while the logic is implemented in systems;
-	*/
+	/**
+	 * @brief Renderable scene
+	 *
+	 * Scene consists of entities, which are just unsigned integers under the hood.
+	 * Each entity can have multiple components attached to it.
+	 * Components contain only data, while logic is implemented in "system" classes.
+	 */
 	class Scene
 	{
 		friend class Entity;
-		friend class Editor; // World editor UI
+		friend class Editor; // World editor
 		friend class UserInterface; // Game UI
 
 	public:
@@ -28,7 +29,7 @@ namespace Yugo
 
 		void OnStart();
 		void OnEvent(const Event& event);
-		void OnUpdate(float ts);
+		void OnUpdate(float timeStep);
 		void OnRender();
 		void OnShutdown();
 
@@ -37,13 +38,28 @@ namespace Yugo
 
 		Entity CreateEntity(const std::string& name = "");
 
-		// TEMPORARY!!!
-		entt::registry& GetRegistry();
+		template<typename... ComponentTypes>
+		auto GetView()
+		{
+			return m_Registry.view<ComponentTypes...>();
+		}
+
+		template<typename ComponentType>
+		auto& GetComponent(entt::entity entity)
+		{
+			return m_Registry.get<ComponentType>(entity);
+		}
+
+		template<typename ComponentType>
+		bool HasComponent(entt::entity entity)
+		{
+			return m_Registry.has<ComponentType>(entity);
+		}
 
 	private:
 		entt::registry m_Registry; // Registry is kind of in-memory database storage for entities and components
 		sPtr<Camera> m_Camera;
-		MouseRay m_MouseRay;
+		MouseRay m_MouseRay; // On the left click mouse ray is casted in order to select object on the screen
 	};
 
 }

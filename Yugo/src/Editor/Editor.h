@@ -4,7 +4,7 @@
 #include "Events/Event.h"
 #include "Core/Window.h"
 #include "Scripting/ScriptEngine.h"
-#include "UI/UserInterface.h"
+#include "GameUI/UserInterface.h"
 
 #include <imgui.h>
 #include <examples/imgui_impl_glfw.h>

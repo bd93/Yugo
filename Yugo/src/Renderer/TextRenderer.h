@@ -1,7 +1,7 @@
 #pragma once
 #include "Renderer/Shader.h"
 #include "Camera/Camera.h"
-#include "UI/Components.h"
+#include "GameUI/Components.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

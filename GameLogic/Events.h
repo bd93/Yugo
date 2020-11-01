@@ -3,8 +3,12 @@
 #include "Events/KeyboardKeyEvent.h"
 #include "Events/MouseButtonEvent.h"
 
+namespace GameLogic
+{
 
-using Event = Yugo::Event;
-using EventType = Yugo::EventType;
-using MouseButtonPress = Yugo::MouseButtonPress;
-using KeyboardKeyPress = Yugo::KeyboardKeyPress;
+	using Event = Yugo::Event;
+	using EventType = Yugo::EventType;
+	using MouseButtonPress = Yugo::MouseButtonPress;
+	using KeyboardKeyPress = Yugo::KeyboardKeyPress;
+
+}

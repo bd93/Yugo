@@ -6,7 +6,7 @@
 namespace Yugo
 {
 
-	class ScriptInterfaceImpl : public ScriptInterface
+	class ScriptInterfaceImpl : public GameLogic::ScriptInterface
 	{
 	public:
 		virtual bool IsKeyboardkeyPressed(Yugo::KeyCode key) override;
@@ -26,6 +26,8 @@ namespace Yugo
 		virtual bool HasTransformComponent() override;
 		virtual bool HasMeshComponent() override;
 		virtual bool HasAnimationComponent() override;
+		virtual bool HasEntityTagComponent() override;
+		virtual bool HasSpriteComponent() override;
 
 	private:
 		Entity m_Entity;

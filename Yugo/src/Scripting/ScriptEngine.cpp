@@ -6,12 +6,13 @@
 namespace Yugo
 {
 
-	ScriptEngine::~ScriptEngine()
-	{
-		//for (auto scriptEntityPair : m_ScriptEntityMap)
-		//	delete scriptEntityPair.second;
-	}
-
+	/**
+	 * @brief Method to be called during application OnStart stage.
+	 *
+	 * This method calls dll exported functions and creates client scripts and game objects.
+	 * Then It creates interface implementations and sets it in client scripts and game objects.
+	 * It also pushes interfaces and game objects to vectors in order to destroy them when OnStop method is called. 
+	 */
 	void Yugo::ScriptEngine::OnStart()
 	{
 		m_Lib = LoadLibrary(L"GameLogic.dll");
@@ -38,7 +39,7 @@ namespace Yugo
 
 			GameObjectInterfaceImpl* gameObjectInterfaceImpl = new GameObjectInterfaceImpl();
 			gameObjectInterfaceImpl->SetScene(m_Scene);
-			::GameObject* gameObject = NewGameObject(entity.GetEnttEntity(), gameObjectInterfaceImpl);
+			GameLogic::GameObject* gameObject = NewGameObject(entity.GetEnttEntity(), gameObjectInterfaceImpl);
 			m_ScriptArray.Scripts[i]->SetGameObject(gameObject);
 			m_GameObjects.push_back(gameObject);
 			m_GameObjectInterfaceImpls.push_back(gameObjectInterfaceImpl);
@@ -48,12 +49,26 @@ namespace Yugo
 			m_ScriptArray.Scripts[i]->OnStart();
 	}
 
-	void Yugo::ScriptEngine::OnUpdate(float ts)
+	/**
+	 * @brief Method to be called during application OnUpdate stage.
+	 *
+	 * Update scripts each frame.
+	 * 
+	 * @param timeStep Duration of each frame.
+	 */
+	void Yugo::ScriptEngine::OnUpdate(float timeStep)
 	{
 		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
-			m_ScriptArray.Scripts[i]->OnUpdate(ts);
+			m_ScriptArray.Scripts[i]->OnUpdate(timeStep);
 	}
 
+	/**
+	 * @brief Method to be called during application OnEvent stage.
+	 *
+	 * Calls OnEvent in each client's script.
+	 *
+	 * @param event Base class for all types of events.
+	 */
 	void ScriptEngine::OnEvent(const Event& event)
 	{
 		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
@@ -62,9 +77,15 @@ namespace Yugo
 
 	void Yugo::ScriptEngine::OnShutdown()
 	{
-		// TODO: Implement case when user close window without clicking on play scene and stop scene buttons
+		// TODO: Implement case when user close window without clicking on "play scene" and "stop scene" buttons
 	}
 
+	/**
+	 * @brief Method to be called when scripts are not in running state.
+	 *
+	 * OnStop calls exported dll functions in order to destroy objects allocated on dll heap.
+	 * It also clears vectors so they can be used for the next script running state. 
+	 */
 	void ScriptEngine::OnStop()
 	{
 		DeleteGameObject DestroyGameObject = (DeleteGameObject)GetProcAddress(m_Lib, "DeleteGameObject");
@@ -92,16 +113,25 @@ namespace Yugo
 
 	void ScriptEngine::OnReload()
 	{
-		m_Lib = LoadLibrary(L"GameLogic.dll");
-		if (m_Lib == NULL)
-			std::cout << "Cannot dynamically load GameLogic.dll!\n";
+		// TODO: Consider if this method is necessary or not.
 	}
 
+	/**
+	 * @brief Keeps track of script file path and which entity this script is attached to.
+	 *
+	 * This method is called when user clicks "Attach Script" in world editor.
+	 * The main idea is to fetch entity in ScriptEngine::OnStart method and sets it in script interface and game object.
+	 *
+	 * @param scriptFilePath Path to script file.
+	 * @param entity Custom entity which holds entt::entity, name and pointer to scene.
+	 */
 	void ScriptEngine::AttachScript(const std::string& scriptFilePath, Entity& entity)
 	{
-		m_ScriptEntityMap[scriptFilePath] = entity;
+		if (m_ScriptEntityMap.find(scriptFilePath) == m_ScriptEntityMap.end())
+			m_ScriptEntityMap[scriptFilePath] = entity;
 	}
 
+	/* @brief Scene setter */
 	void ScriptEngine::SetScene(Scene* scene)
 	{
 		m_Scene = scene;

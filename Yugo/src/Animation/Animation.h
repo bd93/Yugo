@@ -1,6 +1,6 @@
 #pragma once
 #include "Scene/Components.h"
-#include "AnimationComponent.h"
+#include "Components.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -26,14 +26,7 @@ namespace Yugo
 	private:
 		static glm::mat4 aiMat4ToGlmMat4(aiMatrix4x4& from);
 		static glm::mat4 aiMat3ToGlmMat4(aiMatrix3x3& from);
-		//// Interpolation methods for calculating bone local transformations at specific frame
-		//static void CalculateInterpolatedPosition(aiVector3D& out, float animationTime, const AnimationComponent::NodeAnimation& nodeAnim);
-		//static void CalculateInterpolatedRotation(aiQuaternion& out, float animationTime, const AnimationComponent::NodeAnimation& nodeAnim);
-		//static void CalculateInterpolatedScaling(aiVector3D& out, float animationTime, const AnimationComponent::NodeAnimation& nodeAnim);
-		//static uint32_t FindPosition(float animationTime, const AnimationComponent::NodeAnimation& nodeAnim);
-		//static uint32_t FindRotation(float animationTime, const AnimationComponent::NodeAnimation& nodeAnim);
-		//static uint32_t FindScaling(float animationTime, const AnimationComponent::NodeAnimation& nodeAnim);
-
+		// Interpolation methods for calculating bone local transformations at specific frame
 		static void CalculateInterpolatedPosition(aiVector3D& out, float animationTime, const AnimationComponent::Animation::NodeAnimation& nodeAnim);
 		static void CalculateInterpolatedRotation(aiQuaternion& out, float animationTime, const AnimationComponent::Animation::NodeAnimation& nodeAnim);
 		static void CalculateInterpolatedScaling(aiVector3D& out, float animationTime, const AnimationComponent::Animation::NodeAnimation& nodeAnim);

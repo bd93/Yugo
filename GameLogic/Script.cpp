@@ -5,42 +5,47 @@
 #define SCRIPT_API __declspec(dllexport)
 
 
-std::vector<Script*>& Script::GetClientScripts() 
-{ 
-	static std::vector<Script*> scripts;
-	return scripts;
-}
-
-
-extern "C"
+namespace GameLogic
 {
 
-	SCRIPT_API ScriptArray CreateScripts()
+	std::vector<Script*>& Script::GetClientScripts()
 	{
-		auto& clientScripts = Script::GetClientScripts();
-		auto numOfClientScripts = clientScripts.size();
-		Script** scripts = new Script*[numOfClientScripts];
-		size_t i = 0;
-		for (auto clientScript : clientScripts)
-			scripts[i++] = clientScript;
-
-		ScriptArray scriptArray;
-		scriptArray.Scripts = scripts;
-		scriptArray.Size = numOfClientScripts;
-		return scriptArray;
+		static std::vector<Script*> scripts;
+		return scripts;
 	}
 
-	SCRIPT_API void DeleteScripts(ScriptArray scriptArray)
+
+	extern "C"
 	{
-		auto scripts = scriptArray.Scripts;
-		auto& clientScripts = Script::GetClientScripts();
-		size_t i = 0;
-		for (auto clientScript : clientScripts)
+
+		SCRIPT_API ScriptArray CreateScripts()
 		{
-			scripts[i] = nullptr;
-			delete scripts[i++];
-			delete clientScript;
+			auto& clientScripts = Script::GetClientScripts();
+			auto numOfClientScripts = clientScripts.size();
+			Script** scripts = new Script * [numOfClientScripts];
+			size_t i = 0;
+			for (auto clientScript : clientScripts)
+				scripts[i++] = clientScript;
+
+			ScriptArray scriptArray;
+			scriptArray.Scripts = scripts;
+			scriptArray.Size = numOfClientScripts;
+			return scriptArray;
+		}
+
+		SCRIPT_API void DeleteScripts(ScriptArray scriptArray)
+		{
+			auto scripts = scriptArray.Scripts;
+			auto& clientScripts = Script::GetClientScripts();
+			size_t i = 0;
+			for (auto clientScript : clientScripts)
+			{
+				scripts[i] = nullptr;
+				delete scripts[i++];
+				delete clientScript;
+			}
 		}
 	}
 
 }
+

@@ -7,51 +7,58 @@
 #include "Events.h"
 
 
-class PlayerScript : public Script
+
+namespace GameLogic
 {
-private:
-	std::vector<GameObject> m_Enemies;
 
-public:
-	PlayerScript() { m_ScriptFilePath = __FILE__; }
-
-	void OnStart() override
+	class PlayerScript : public Script
 	{
-		m_Enemies = GameObject::FindGameObjectsWithTag("sphere");
-	}
+	private:
+		std::vector<GameObject> m_Enemies;
 
-	void OnUpdate(float ts) override
-	{
-		if (IsKeyboardkeyPressed(KEY_W))
+	public:
+		PlayerScript() { m_ScriptFilePath = __FILE__; }
+
+		void OnStart() override
 		{
-			auto& transform = GetComponent<TransformComponent>();
-			transform.Position.x -= 5.0f;
-			
-			for (auto enemy : m_Enemies)
+			m_Enemies = GameObject::FindGameObjectsWithTag("sphere");
+		}
+
+		void OnUpdate(float ts) override
+		{
+			if (IsKeyboardkeyPressed(KEY_W))
 			{
-				auto& transform = enemy.GetComponent<TransformComponent>();
-				transform.Position.x += 1.0f;
+				auto& transform = GetComponent<TransformComponent>();
+				transform.Position.x -= 5.0f;
+
+				for (auto enemy : m_Enemies)
+				{
+					auto& transform = enemy.GetComponent<TransformComponent>();
+					transform.Position.x += 1.0f;
+				}
 			}
 		}
-	}
 
-	void OnEvent(const Event& event) override
-	{
-		if (event.GetEventType() == EventType::MouseButtonPress)
+		void OnEvent(const Event& event) override
 		{
-			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
-			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
+			if (event.GetEventType() == EventType::MouseButtonPress)
 			{
+				const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
+				if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
+				{
 
+				}
 			}
 		}
-	}
 
-	void OnShutdown() override
-	{
-		
-	}
-};
+		void OnShutdown() override
+		{
+
+		}
+	};
 
 
-static ScriptRegister<PlayerScript> s_ScriptRegister;
+	static ScriptRegister<PlayerScript> s_ScriptRegister;
+
+}
+

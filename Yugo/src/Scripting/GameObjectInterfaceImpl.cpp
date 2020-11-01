@@ -22,7 +22,7 @@ namespace Yugo
 		if (entities.size() > 0)
 			entities.clear();
 
-		auto view = m_Scene->GetRegistry().view<EntityTagComponent>();
+		auto view = m_Scene->GetView<EntityTagComponent>();
 		for (auto entity : view)
 			entities.push_back(entity);
 
@@ -31,22 +31,22 @@ namespace Yugo
 
 	TransformComponent& GameObjectInterfaceImpl::GetTransformComponent(entt::entity entity)
 	{
-		return m_Scene->GetRegistry().get<TransformComponent>(entity);
+		return m_Scene->GetComponent<TransformComponent>(entity);
 	}
 
 	MeshComponent& GameObjectInterfaceImpl::GetMeshComponent(entt::entity entity)
 	{
-		return m_Scene->GetRegistry().get<MeshComponent>(entity);
+		return m_Scene->GetComponent<MeshComponent>(entity);
 	}
 
 	AnimationComponent& GameObjectInterfaceImpl::GetAnimationComponent(entt::entity entity)
 	{
-		return m_Scene->GetRegistry().get<AnimationComponent>(entity);
+		return m_Scene->GetComponent<AnimationComponent>(entity);
 	}
 
 	EntityTagComponent& GameObjectInterfaceImpl::GetEntityTagComponent(entt::entity entity)
 	{
-		return m_Scene->GetRegistry().get<EntityTagComponent>(entity);
+		return m_Scene->GetComponent<EntityTagComponent>(entity);
 	}
 
 	std::vector<CanvasWidgetComponent*>& GameObjectInterfaceImpl::GetCanvasWidgetComponentsInChildren(entt::entity entity)
@@ -57,12 +57,12 @@ namespace Yugo
 			components.clear();
 
 		TraverseFun traverse = [&](entt::entity node) {
-			auto& relationship = m_Scene->GetRegistry().get<RelationshipComponent>(node);
+			auto& relationship = m_Scene->GetComponent<RelationshipComponent>(node);
 			for (auto child : relationship.Children)
 			{
-				if (m_Scene->GetRegistry().has<CanvasWidgetComponent>(child))
+				if (m_Scene->HasComponent<CanvasWidgetComponent>(child))
 				{
-					auto& canvas = m_Scene->GetRegistry().get<CanvasWidgetComponent>(child);
+					auto& canvas = m_Scene->GetComponent<CanvasWidgetComponent>(child);
 					components.push_back(&canvas);
 				}
 			}
@@ -86,12 +86,12 @@ namespace Yugo
 			components.clear();
 
 		TraverseFun traverse = [&](entt::entity node) {
-			auto& relationship = m_Scene->GetRegistry().get<RelationshipComponent>(node);
+			auto& relationship = m_Scene->GetComponent<RelationshipComponent>(node);
 			for (auto child : relationship.Children)
 			{
-				if (m_Scene->GetRegistry().has<ButtonWidgetComponent>(child))
+				if (m_Scene->HasComponent<ButtonWidgetComponent>(child))
 				{
-					auto& button = m_Scene->GetRegistry().get<ButtonWidgetComponent>(child);
+					auto& button = m_Scene->GetComponent<ButtonWidgetComponent>(child);
 					components.push_back(&button);
 				}
 			}
@@ -115,12 +115,12 @@ namespace Yugo
 			components.clear();
 
 		TraverseFun traverse = [&](entt::entity node) {
-			auto& relationship = m_Scene->GetRegistry().get<RelationshipComponent>(node);
+			auto& relationship = m_Scene->GetComponent<RelationshipComponent>(node);
 			for (auto child : relationship.Children)
 			{
-				if (m_Scene->GetRegistry().has<TextWidgetComponent>(child))
+				if (m_Scene->HasComponent<TextWidgetComponent>(child))
 				{
-					auto& text = m_Scene->GetRegistry().get<TextWidgetComponent>(child);
+					auto& text = m_Scene->GetComponent<TextWidgetComponent>(child);
 					components.push_back(&text);
 				}
 			}
@@ -144,12 +144,12 @@ namespace Yugo
 			components.clear();
 
 		TraverseFun traverse = [&](entt::entity node) {
-			auto& relationship = m_Scene->GetRegistry().get<RelationshipComponent>(node);
+			auto& relationship = m_Scene->GetComponent<RelationshipComponent>(node);
 			for (auto child : relationship.Children)
 			{
-				if (m_Scene->GetRegistry().has<TransformComponent>(child))
+				if (m_Scene->HasComponent<TransformComponent>(child))
 				{
-					auto& transform = m_Scene->GetRegistry().get<TransformComponent>(child);
+					auto& transform = m_Scene->GetComponent<TransformComponent>(child);
 					components.push_back(&transform);
 				}
 			}
@@ -167,22 +167,22 @@ namespace Yugo
 
 	bool GameObjectInterfaceImpl::HasTransformComponent(entt::entity entity)
 	{
-		return m_Scene->GetRegistry().has<TransformComponent>(entity);
+		return m_Scene->HasComponent<TransformComponent>(entity);
 	}
 
 	bool GameObjectInterfaceImpl::HasMeshComponent(entt::entity entity)
 	{
-		return m_Scene->GetRegistry().has<MeshComponent>(entity);
+		return m_Scene->HasComponent<MeshComponent>(entity);
 	}
 
 	bool GameObjectInterfaceImpl::HasAnimationComponent(entt::entity entity)
 	{
-		return m_Scene->GetRegistry().has<AnimationComponent>(entity);
+		return m_Scene->HasComponent<AnimationComponent>(entity);
 	}
 
 	bool GameObjectInterfaceImpl::HasEntityTagComponent(entt::entity entity)
 	{
-		return m_Scene->GetRegistry().has<EntityTagComponent>(entity);
+		return m_Scene->HasComponent<EntityTagComponent>(entity);
 	}
 
 }

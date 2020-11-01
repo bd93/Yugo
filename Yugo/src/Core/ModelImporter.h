@@ -1,6 +1,6 @@
 #pragma once
 #include "Scene/Components.h"
-#include "Animation/AnimationComponent.h"
+#include "Animation/Components.h"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>

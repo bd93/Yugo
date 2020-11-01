@@ -7,51 +7,56 @@
 #include "Events.h"
 
 
-class UIscript : public Script
+namespace GameLogic
 {
-private:
-	//std::vector<sPtr<ButtonWidgetComponent>> m_Buttons;
-	std::vector<ButtonWidgetComponent*> m_Buttons;
 
-public:
-	UIscript() { m_ScriptFilePath = __FILE__; }
-
-	void OnStart() override
+	class UIscript : public Script
 	{
-		m_Buttons = m_GameObject->GetComponentsInChildren<ButtonWidgetComponent>();
-	}
+	private:
+		//std::vector<sPtr<ButtonWidgetComponent>> m_Buttons;
+		std::vector<ButtonWidgetComponent*> m_Buttons;
 
-	void OnUpdate(float ts) override
-	{
-		
-	}
+	public:
+		UIscript() { m_ScriptFilePath = __FILE__; }
 
-	void OnEvent(const Event& event) override
-	{
-		if (event.GetEventType() == EventType::MouseButtonPress)
+		void OnStart() override
 		{
-			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
-			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
+			m_Buttons = m_GameObject->GetComponentsInChildren<ButtonWidgetComponent>();
+		}
+
+		void OnUpdate(float ts) override
+		{
+
+		}
+
+		void OnEvent(const Event& event) override
+		{
+			if (event.GetEventType() == EventType::MouseButtonPress)
 			{
-				auto& transform = m_GameObject->GetComponentsInChildren<TransformComponent>();
-				int index = 0;
-				for (auto& button : m_Buttons)
+				const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
+				if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
 				{
-					if (IsMouseHoveringRect(*transform[index]))
+					auto& transform = m_GameObject->GetComponentsInChildren<TransformComponent>();
+					int index = 0;
+					for (auto& button : m_Buttons)
 					{
-						transform[index]->Scale.y += 5.0f;
+						if (IsMouseHoveringRect(*transform[index]))
+						{
+							transform[index]->Scale.y += 5.0f;
+						}
+						index++;
 					}
-					index++;
 				}
 			}
 		}
-	}
 
-	void OnShutdown() override
-	{
+		void OnShutdown() override
+		{
 
-	}
-};
+		}
+	};
 
 
-static ScriptRegister<UIscript> s_ScriptRegister;
+	static ScriptRegister<UIscript> s_ScriptRegister;
+
+}

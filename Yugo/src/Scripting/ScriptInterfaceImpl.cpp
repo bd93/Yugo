@@ -90,5 +90,15 @@ namespace Yugo
 		return m_Entity.HasComponent<AnimationComponent>();
 	}
 
+	bool ScriptInterfaceImpl::HasEntityTagComponent()
+	{
+		return m_Entity.HasComponent<EntityTagComponent>();;
+	}
+
+	bool ScriptInterfaceImpl::HasSpriteComponent()
+	{
+		return m_Entity.HasComponent<SpriteComponent>();;
+	}
+
 
 }

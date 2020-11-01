@@ -6,7 +6,7 @@
 namespace Yugo
 {
 
-	class GameObjectInterfaceImpl : public GameObjectInterface
+	class GameObjectInterfaceImpl : public GameLogic::GameObjectInterface
 	{
 		using TraverseFun = std::function<void(entt::entity)>;
 
