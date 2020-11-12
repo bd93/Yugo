@@ -32,7 +32,7 @@ namespace Yugo
 
 	Application::Application()
 	{
-		m_Window = uPtrCreate<Window>("Yugo", 1200, 800);
+		m_Window = uPtrCreate<Window>("Editor", 1200, 800);
 		m_Editor = uPtrCreate<Editor>();
 		//m_ScriptEngine = uPtrCreate<ScriptEngine>();
 	}

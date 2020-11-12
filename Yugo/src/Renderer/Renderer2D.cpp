@@ -6,7 +6,7 @@
 namespace Yugo
 {
 
-	static sPtr<Camera> s_Camera;
+	//static sPtr<Camera> s_Camera;
 
 	static Line s_Line;
 	static Quad s_Quad;
@@ -85,10 +85,10 @@ namespace Yugo
 		InitEmptyQuad();
 	}
 
-	void Renderer2D::SetCamera(const sPtr<Camera>& camera)
-	{
-		s_Camera = camera;
-	}
+	//void Renderer2D::SetCamera(const sPtr<Camera>& camera)
+	//{
+	//	s_Camera = camera;
+	//}
 
 	void Renderer2D::ClearColorBuffer(float r, float g, float b)
 	{
@@ -110,6 +110,7 @@ namespace Yugo
 	// Flat colored shape
 	void Renderer2D::Draw(
 		Shape2D shape, 
+		const CameraComponent& camera,
 		const glm::vec3& position, 
 		const glm::vec3& size, 
 		const glm::vec3& color
@@ -122,11 +123,11 @@ namespace Yugo
 		model = glm::translate(model, position);
 		model = glm::scale(model, size);
 
-		glm::mat4 view = s_Camera->GetViewMatrix();
+		glm::mat4 view = camera.View;
 		//glm::mat4 view = glm::mat4(1.0f);
 		//view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
-		glm::mat4 projection = s_Camera->GetProjectionMatrix();
+		glm::mat4 projection = camera.Projection;
 		//glm::mat4 projection = glm::ortho(-600.0f, +600.0f, -400.0f, 400.0f, 0.1f, 100.0f);
 
 		shader.SetMat4("model", model);
@@ -193,6 +194,7 @@ namespace Yugo
 	// Rotated flat colored shape
 	void Renderer2D::DrawRotated(
 		Shape2D shape, 
+		const CameraComponent& camera,
 		const glm::vec3& position, 
 		const glm::vec3& size, 
 		const glm::vec3& rotation, 
@@ -209,11 +211,11 @@ namespace Yugo
 		model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 		model = glm::scale(model, size);
 
-		glm::mat4 view = s_Camera->GetViewMatrix();
+		glm::mat4 view = camera.View;
 		//glm::mat4 view = glm::mat4(1.0f);
 		//view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
-		glm::mat4 projection = s_Camera->GetProjectionMatrix();
+		glm::mat4 projection = camera.Projection;
 		//glm::mat4 projection = glm::ortho(-600.0f, +600.0f, -400.0f, 400.0f, 0.1f, 100.0f);
 
 		shader.SetMat4("model", model);
@@ -283,6 +285,7 @@ namespace Yugo
 	// Instanced flat colored shapes
 	void Renderer2D::DrawInstanced(
 		Shape2D shape,
+		const CameraComponent& camera,
 		const glm::vec3& position, 
 		const glm::vec3& size, 
 		const std::vector<glm::mat4>& models, 
@@ -295,6 +298,7 @@ namespace Yugo
 	// Instanced textured shapes
 	void Renderer2D::DrawInstanced(
 		Shape2D shape,
+		const CameraComponent& camera,
 		const glm::vec3& position, 
 		const glm::vec3& size, 
 		const Texture& texture, 
@@ -306,6 +310,7 @@ namespace Yugo
 	}
 
 	void Renderer2D::DrawEmptyQuad(
+		const CameraComponent& camera,
 		const glm::vec3& position,
 		const glm::vec3& size,
 		const glm::vec3& color // Color of a line
@@ -318,8 +323,8 @@ namespace Yugo
 		model = glm::translate(model, position);
 		model = glm::scale(model, size);
 
-		glm::mat4 view = s_Camera->GetViewMatrix();
-		glm::mat4 projection = s_Camera->GetProjectionMatrix();
+		glm::mat4 view = camera.View;
+		glm::mat4 projection = camera.Projection;
 
 		shader.SetMat4("model", model);
 		shader.SetMat4("view", view);
@@ -334,6 +339,7 @@ namespace Yugo
 	}
 
 	void Renderer2D::DrawRotatedEmptyQuad(
+		const CameraComponent& camera,
 		const glm::vec3& position, 
 		const glm::vec3& size, 
 		const glm::vec3& rotation,
@@ -350,8 +356,8 @@ namespace Yugo
 		model = glm::rotate(model, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 		model = glm::scale(model, size);
 
-		glm::mat4 view = s_Camera->GetViewMatrix();
-		glm::mat4 projection = s_Camera->GetProjectionMatrix();
+		glm::mat4 view = camera.View;
+		glm::mat4 projection = camera.Projection;
 
 		shader.SetMat4("model", model);
 		shader.SetMat4("view", view);
@@ -369,6 +375,7 @@ namespace Yugo
 	This grid is on XZ plane;
 	*/
 	void Renderer2D::DrawGrid(
+		const CameraComponent& camera,
 		const glm::vec3& position,
 		uint32_t numOfQuads,
 		const glm::vec3& quadSize,
@@ -383,7 +390,7 @@ namespace Yugo
 			float zCoord = position.z + ((numOfQuadsPerEdge / 2) * quadSize.z);
 			for (uint32_t j = 0; j < numOfQuadsPerEdge; ++j)
 			{
-				DrawRotatedEmptyQuad(glm::vec3(xCoord, 0.0f, zCoord), quadSize, glm::vec3(-90.0f, 0.0f, 0.0f), color);
+				DrawRotatedEmptyQuad(camera, glm::vec3(xCoord, 0.0f, zCoord), quadSize, glm::vec3(-90.0f, 0.0f, 0.0f), color);
 				zCoord -= quadSize.z;
 			}
 			xCoord += quadSize.x;
@@ -391,6 +398,7 @@ namespace Yugo
 	}
 
 	void Renderer2D::DrawRotatedGrid(
+		const CameraComponent& camera,
 		const glm::vec3& position, 
 		uint32_t numOfQuads, 
 		const glm::vec3& quadSize, 

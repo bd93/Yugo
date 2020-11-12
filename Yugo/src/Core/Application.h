@@ -20,6 +20,7 @@ namespace Yugo
 
 	private:
 		uPtr<Window> m_Window;
+		uPtr<Window> m_SecondWindow;
 		uPtr<Editor> m_Editor;
 		//ScriptEngine* m_ScriptEngine;
 		//Scene* m_Scene;

@@ -1,13 +1,9 @@
 #pragma once
-#include "Scene/Components.h"
-#include "Animation/Components.h"
-#include "GameUI/Components.h"
-
+#include "AllComponents.h"
 
 
 namespace GameLogic
 {
-
 	using TransformComponent = Yugo::TransformComponent;
 	using MeshComponent = Yugo::MeshComponent;
 	using AnimationComponent = Yugo::AnimationComponent;
@@ -16,6 +12,7 @@ namespace GameLogic
 	using CanvasWidgetComponent = Yugo::CanvasWidgetComponent;
 	using ButtonWidgetComponent = Yugo::ButtonWidgetComponent;
 	using TextWidgetComponent = Yugo::TextWidgetComponent;
-
+	using ScriptComponent = Yugo::ScriptComponent;
+	using CameraComponent = Yugo::CameraComponent;
 }
 

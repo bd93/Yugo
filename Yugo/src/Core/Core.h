@@ -21,3 +21,5 @@ constexpr uPtr<T> uPtrCreate(Args&& ... args)
 }
 
 #define ARRAY_SIZE(array) sizeof(array)/sizeof(array[0])
+
+#define TimeStep float

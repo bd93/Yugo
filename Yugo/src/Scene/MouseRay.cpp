@@ -10,10 +10,10 @@ namespace Yugo
 	glm::vec3 MouseRay::s_MouseEyeSpaceCoords = glm::vec3(0.0f, 0.0f, 0.0f);
 	float MouseRay::s_MouseRayCollisionDistance = 0.0f;
 
-	void MouseRay::CalculateRayOrigin(const sPtr<Camera>& camera, float mousePosX, float mousePosY, int sceneWidth, int sceneHeight)
+	void MouseRay::CalculateRayOrigin(const CameraComponent& camera, float mousePosX, float mousePosY, int sceneWidth, int sceneHeight)
 	{
-		const auto& projection = camera->GetProjectionMatrix();
-		const auto& view = camera->GetViewMatrix();
+		const auto& projection = camera.Projection;
+		const auto& view = camera.View;
 
 		// Transform mouse viewport coords to normalized device coords
 		float mouseNdcX = (2.0f * mousePosX) / (float)sceneWidth - 1.0f;
@@ -31,22 +31,22 @@ namespace Yugo
 		s_MouseEyeSpaceCoords = glm::vec3(eyeCoords.x, eyeCoords.y, 0.0f); // Only for UI widgets purpose
 
 		s_MouseRayOrigin = glm::vec3(worldCoords.x, worldCoords.y, worldCoords.z);
-		s_MouseRayDirection = camera->GetDirection();
+		s_MouseRayDirection = camera.Direction;
 	}
 
 	/*
 	Algorithm can be found here: 
 	https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
 	*/
-	bool MouseRay::CheckCollisionWithPlane()
+	bool MouseRay::CheckCollisionWithPlane(const glm::vec3& planeNormal, float distanceToCoordOrigin)
 	{
-		glm::vec3 faceNormal = glm::vec3(0.0f, 1.0f, 0.0f);
+		//glm::vec3 faceNormal = glm::vec3(0.0f, 1.0f, 0.0f);
 
-		float denom = glm::dot(faceNormal, s_MouseRayDirection);
+		float denom = glm::dot(planeNormal, s_MouseRayDirection);
 		if (std::abs(denom) <= 1e-4f)
 			return false;
-		// 0.0f is "Y" position of ground plane
-		float t = (0.0f - glm::dot(faceNormal, s_MouseRayOrigin)) / glm::dot(faceNormal, s_MouseRayDirection);
+		
+		float t = (distanceToCoordOrigin - glm::dot(planeNormal, s_MouseRayOrigin)) / glm::dot(planeNormal, s_MouseRayDirection);
 		if (t <= 1e-4f)
 			return false;
 		s_MouseRayCollisionDistance = t;

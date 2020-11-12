@@ -20,7 +20,7 @@ namespace Yugo
 		Window(const std::string& windowName, int width, int height);
 
 		void OnStart();
-		void OnUpdate(float ts);
+		void OnUpdate(TimeStep ts);
 		void OnEvent();
 		void OnRender();
 		void OnShutdown();

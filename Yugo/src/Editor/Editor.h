@@ -21,7 +21,7 @@ namespace Yugo
 
 		void OnStart();
 		void OnRender();
-		void OnUpdate(float ts);
+		void OnUpdate(TimeStep ts);
 		void OnEvent(const Event& event);
 		void OnShutdown();
 

@@ -11,6 +11,7 @@ namespace Yugo
 	struct CanvasWidgetComponent
 	{
 		int IsActive = true;
+		//entt::entity Entity;
 		CanvasWidgetComponent() = default;
 		CanvasWidgetComponent(const CanvasWidgetComponent& other) = default;
 	};
@@ -19,6 +20,7 @@ namespace Yugo
 	{
 		bool IsClicked = false;
 		int IsActive = true;
+		//entt::entity Entity;
 		ButtonWidgetComponent() = default;
 		ButtonWidgetComponent(const ButtonWidgetComponent& other) = default;
 	};
@@ -28,6 +30,7 @@ namespace Yugo
 		std::string Text = "";
 		glm::vec3 Color = glm::vec3(0.8f, 0.8f, 0.8f);
 		int IsActive = true;
+		//entt::entity Entity;
 		TextWidgetComponent() = default;
 		TextWidgetComponent(const TextWidgetComponent& other) = default;
 	};

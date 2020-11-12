@@ -10,7 +10,7 @@ namespace Yugo
 
     static std::map<char, Character> s_Characters;
     static uint32_t s_VAO, s_VBO;
-    static sPtr<Camera> s_Camera;
+    //static sPtr<Camera> s_Camera;
 
 	void TextRenderer::Submit()
 	{
@@ -101,7 +101,7 @@ namespace Yugo
         glBindVertexArray(0);
 	}
 
-	void TextRenderer::Render(TextWidgetComponent& text, TransformComponent& transform, const Shader& shader)
+	void TextRenderer::Render(TextWidgetComponent& text, TransformComponent& transform, const CameraComponent& camera, const Shader& shader)
 	{
         EnableCullFace();
         EnableBlend();
@@ -109,7 +109,7 @@ namespace Yugo
         // Activate corresponding render state	
         shader.Use();
         shader.SetVec3("textColor", text.Color);
-        shader.SetMat4("projection", s_Camera->GetProjectionMatrix());
+        shader.SetMat4("projection", camera.Projection);
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(s_VAO);
 
@@ -169,10 +169,10 @@ namespace Yugo
         DisableBlend();
 	}
 
-    void TextRenderer::SetCamera(const sPtr<Camera>& camera)
-    {
-        s_Camera = camera;
-    }
+    //void TextRenderer::SetCamera(const sPtr<Camera>& camera)
+    //{
+    //    s_Camera = camera;
+    //}
 
 	void TextRenderer::EnableBlend()
 	{

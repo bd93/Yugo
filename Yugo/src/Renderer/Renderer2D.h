@@ -98,12 +98,13 @@ namespace Yugo
 
 	public:
 		static void Init();
-		static void SetCamera(const sPtr<Camera>& camera);
+		//static void SetCamera(const sPtr<Camera>& camera);
 		// r = red, g = green, b = blue
 		static void ClearColorBuffer(float r, float g, float b);
 
 		static void Draw(
 			Shape2D shape,
+			const CameraComponent& camera,
 			const glm::vec3& position,
 			const glm::vec3& size,
 			const glm::vec3& color = glm::vec3(1.0f, 1.0f, 1.0f)
@@ -117,6 +118,7 @@ namespace Yugo
 		);
 		static void DrawRotated(
 			Shape2D shape,
+			const CameraComponent& camera,
 			const glm::vec3& position,
 			const glm::vec3& size,
 			const glm::vec3& rotation,
@@ -133,6 +135,7 @@ namespace Yugo
 
 		static void DrawInstanced(
 			Shape2D shape,
+			const CameraComponent& camera,
 			const glm::vec3& position, // Position of the whole geometry that comtains instanced shapes
 			const glm::vec3& size, // Size of single shape
 			const std::vector<glm::mat4>& models, // Transformation matrices for instanced shapes 
@@ -140,6 +143,7 @@ namespace Yugo
 		);
 		static void DrawInstanced(
 			Shape2D shape,
+			const CameraComponent& camera,
 			const glm::vec3& position, // Position of the whole geometry that comtains instanced shapes
 			const glm::vec3& size, // Size of single shape
 			const Texture& texture,
@@ -149,11 +153,13 @@ namespace Yugo
 
 		// Draw empty quad with 4 Line shapes
 		static void DrawEmptyQuad(
+			const CameraComponent& camera,
 			const glm::vec3& position, 
 			const glm::vec3& size,
 			const glm::vec3& color = glm::vec3(1.0f, 1.0f, 1.0f)
 		);
 		static void DrawRotatedEmptyQuad(
+			const CameraComponent& camera,
 			const glm::vec3& position,
 			const glm::vec3& size,
 			const glm::vec3& rotation,
@@ -162,12 +168,14 @@ namespace Yugo
 
 		// Draw grid that consists of empty quads
 		static void DrawGrid(
+			const CameraComponent& camera,
 			const glm::vec3& position,
 			uint32_t numOfQuads,
 			const glm::vec3& quadSize,
 			const glm::vec3& color = glm::vec3(1.0f, 1.0f, 1.0f)
 		);
 		static void DrawRotatedGrid(
+			const CameraComponent& camera,
 			const glm::vec3& position,
 			uint32_t numOfQuads,
 			const glm::vec3& quadSize,

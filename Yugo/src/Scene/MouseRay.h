@@ -11,8 +11,8 @@ namespace Yugo
 	class MouseRay
 	{
 	public:
-		static void CalculateRayOrigin(const sPtr<Camera>& camera, float mousePosX, float mousePosY, int sceneWidth, int sceneHeight);
-		static bool CheckCollisionWithPlane();
+		static void CalculateRayOrigin(const CameraComponent& camera, float mousePosX, float mousePosY, int sceneWidth, int sceneHeight);
+		static bool CheckCollisionWithPlane(const glm::vec3& planeNormal = glm::vec3(0.0f, 1.0f, 0.0f), float distanceToCoordOrigin = 0.0f);
 		static bool CheckCollisionWithBox(const MeshComponent& mesh, const TransformComponent& transform);
 		static bool CheckCollisionWithMesh(const MeshComponent& mesh, const TransformComponent& transform); // Check if ray intersects any triangle in mesh
 		static bool CheckCollisionWithSprite(const TransformComponent& transform);

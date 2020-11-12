@@ -17,11 +17,18 @@ namespace Yugo
 	UserInterface::UserInterface(sPtr<Scene>& scene)
 		: m_Scene(scene)
 	{
-		m_Camera = sPtrCreate<Camera>(glm::vec3(100.0f, 100.0f, 100.0f));
+		//m_Camera = sPtrCreate<Camera>(glm::vec3(100.0f, 100.0f, 100.0f));
 
 		//Dispatcher::Subscribe<MouseButtonPress>(this);
 		//Dispatcher::Subscribe<KeyboardKeyPress>(this);
 		//Dispatcher::Subscribe<MouseScroll>(this);
+
+		auto cameraEntity = m_Scene->CreateEntity();
+		auto& transform = cameraEntity.AddComponent<TransformComponent>();
+		auto& camera = cameraEntity.AddComponent<CameraComponent>();
+		auto& tag = cameraEntity.AddComponent<EntityTagComponent>();
+		tag.Name = "UI Camera";
+		Camera::OnStart(transform, camera);
 	}
 
 	void UserInterface::OnStart()
@@ -43,8 +50,8 @@ namespace Yugo
 		);
 		ResourceManager::AddTexture("texture", texture);
 
-		SpriteRenderer::SetCamera(m_Camera);
-		TextRenderer::SetCamera(m_Camera);
+		//SpriteRenderer::SetCamera(m_Camera);
+		//TextRenderer::SetCamera(m_Camera);
 		TextRenderer::Submit();
 	}
 
@@ -68,7 +75,7 @@ namespace Yugo
 		}
 	}
 
-	void UserInterface::OnUpdate(float ts)
+	void UserInterface::OnUpdate(TimeStep ts)
 	{
 		// Pre-order traversal (recursive method)
 		TraverseFun traverse = [&](entt::entity entity) {
@@ -107,18 +114,27 @@ namespace Yugo
 				entity = queue.front();
 				queue.pop();
 				auto& [sprite, transform, relationship] = view.get<SpriteComponent, TransformComponent, RelationshipComponent>(entity);
-				
-				if (m_Scene->m_Registry.has<TextWidgetComponent>(entity))
+
+				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+				for (auto entity : view)
 				{
-					auto& text = m_Scene->m_Registry.get<TextWidgetComponent>(entity);
-					TextRenderer::Render(text, transform, ResourceManager::GetShader("textShader"));
-				}
-				else
-				{
-					if (sprite.HasTexture)
-						SpriteRenderer::Render(sprite, transform, ResourceManager::GetShader("uiTexturedShader"));
-					else
-						SpriteRenderer::Render(sprite, transform, ResourceManager::GetShader("uiFlatColoredShader"));
+					auto& tag = m_Scene->GetComponent<EntityTagComponent>(entity);
+					if (tag.Name == "UI Camera")
+					{
+						auto& camera = view.get<CameraComponent>(entity);
+						if (m_Scene->m_Registry.has<TextWidgetComponent>(entity))
+						{
+							auto& text = m_Scene->m_Registry.get<TextWidgetComponent>(entity);
+							TextRenderer::Render(text, transform, camera, ResourceManager::GetShader("textShader"));
+						}
+						else
+						{
+							if (sprite.HasTexture)
+								SpriteRenderer::Render(sprite, transform, camera, ResourceManager::GetShader("uiTexturedShader"));
+							else
+								SpriteRenderer::Render(sprite, transform, camera, ResourceManager::GetShader("uiFlatColoredShader"));
+						}
+					}
 				}
 
 				for (auto child : relationship.Children)

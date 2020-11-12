@@ -1,20 +1,30 @@
 #pragma once
 #include "Scene/Entity.h"
 #include "Script.h"
+#include "Components.h"
 #include "GameObject.h"
 #include "ScriptInterfaceImpl.h"
 #include "GameObjectInterfaceImpl.h"
+#include "PlaneInterfaceImpl.h"
+#include "InputInterfaceImpl.h"
 
 #include <Windows.h>
 
 
 namespace Yugo
 {
-	// Function pointers for imported functions from GameLogic.dll
+	// Function pointers which point to functions, imported from GameLogic.dll
 	typedef GameLogic::ScriptArray (*CreateScripts)();
 	typedef void (*DeleteScripts)(GameLogic::ScriptArray);
-	typedef GameLogic::GameObject* (*CreateGameObject)(entt::entity, GameObjectInterfaceImpl*);
+	typedef GameLogic::GameObject* (*CreateGameObject)(entt::entity);
 	typedef void (*DeleteGameObject)(GameLogic::GameObject*);
+
+	typedef const char* (*GetScriptFilePath)(GameLogic::Script* script);
+	//typedef void (*SetScriptInterface)(ScriptInterfaceImpl*);
+	typedef void (*SetGameObject)(GameLogic::GameObject*, GameLogic::Script* script);
+	typedef void (*SetGameObjectInterface)(GameObjectInterfaceImpl*);
+	typedef void (*SetPlaneInterface)(PlaneInterfaceImpl*);
+	typedef void (*SetInputInterface)(InputInterfaceImpl*);
 	
 	class Editor;
 
@@ -37,8 +47,10 @@ namespace Yugo
 		friend class Editor;
 
 	public:
+		ScriptEngine();
+
 		void OnStart();
-		void OnUpdate(float timeStep);
+		void OnUpdate(TimeStep ts);
 		void OnEvent(const Event& event);
 		void OnShutdown();
 		void OnStop();
@@ -52,8 +64,11 @@ namespace Yugo
 		GameLogic::ScriptArray m_ScriptArray;
 		Scene* m_Scene;
 		std::vector<GameLogic::GameObject*> m_GameObjects;
-		std::vector<ScriptInterfaceImpl*> m_ScriptInterfaceImpls;
-		std::vector<GameObjectInterfaceImpl*> m_GameObjectInterfaceImpls;
 		std::unordered_map<std::string, Entity> m_ScriptEntityMap;
+		//std::vector<ScriptInterfaceImpl*> m_ScriptInterfaceImpls;
+		GameObjectInterfaceImpl* m_GameObjectInterfaceImpl;
+		PlaneInterfaceImpl* m_PlaneInterfaceImpl;
+		InputInterfaceImpl* m_InputInterfaceImpl;
+		//ScriptInterfaceImpl* m_ScriptInterfaceImpl;
 	};
 }

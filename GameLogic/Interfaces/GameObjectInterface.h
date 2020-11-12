@@ -1,19 +1,20 @@
 #pragma once
 
-#include "Components.h"
-#include "Scene/Components.h"
+#include "YugoComponents.h"
 #include "Scene/Entity.h"
-#include "Animation/Components.h"
 
 
 namespace GameLogic
 {
 
-	/*
-	This class represents interface for accessing game engine functionalities;
-	GameObject class holds pointer to this interface;
-	Methods are overridden on the game engine side;
-	*/
+	/**
+	 * @brief Interface for accessing game engine functionalities.
+	 *
+	 * GameObject class holds pointer to this interface.
+	 * Methods are overridden on the game engine side.
+	 *
+	 * @note Polymorphic GameObjectInterfaceImpl object is set in GameObject on the game engine side.
+	 */
 	class GameObjectInterface
 	{
 	public:
@@ -21,11 +22,16 @@ namespace GameLogic
 		virtual Yugo::Scene* GetScene() = 0;
 
 		virtual std::vector<entt::entity>& GetEntitiesWithEntityTagComponent() = 0;
+		virtual std::vector<entt::entity>& GetEntitiesWithButtonWidgetComponent() = 0;
+		virtual std::vector<entt::entity>& GetEntitiesWithCanvasWidgetComponent() = 0;
+		virtual std::vector<entt::entity>& GetEntitiesWithTextWidgetComponent() = 0;
 
 		virtual TransformComponent& GetTransformComponent(entt::entity entity) = 0;
 		virtual MeshComponent& GetMeshComponent(entt::entity entity) = 0;
 		virtual AnimationComponent& GetAnimationComponent(entt::entity entity) = 0;
 		virtual EntityTagComponent& GetEntityTagComponent(entt::entity entity) = 0;
+		virtual ScriptComponent& GetScriptComponent(entt::entity entity) = 0;
+		virtual CameraComponent& GetCameraComponent(entt::entity entity) = 0;
 
 		virtual std::vector<CanvasWidgetComponent*>& GetCanvasWidgetComponentsInChildren(entt::entity entity) = 0;
 		virtual std::vector<ButtonWidgetComponent*>& GetButtonWidgetComponentsInChildren(entt::entity entity) = 0;
@@ -36,6 +42,8 @@ namespace GameLogic
 		virtual bool HasMeshComponent(entt::entity entity) = 0;
 		virtual bool HasAnimationComponent(entt::entity entity) = 0;
 		virtual bool HasEntityTagComponent(entt::entity entity) = 0;
+		virtual bool HasScriptComponent(entt::entity entity) = 0;
+		virtual bool HasCameraComponent(entt::entity entity) = 0;
 	};
 
 }

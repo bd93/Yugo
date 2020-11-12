@@ -7,7 +7,7 @@
 #include "Events/ApplicationEvent.h"
 #include "Animation/Animation.h"
 #include "Serializer/Serializer.h"
-#include "Scripting/ScriptComponent.h"
+#include "Scripting/Components.h"
 #include "Renderer/SpriteRenderer.h"
 #include "GameUI/UserInterface.h"
 #include "Renderer/TextRenderer.h"
@@ -18,7 +18,12 @@ namespace Yugo
 
 	Scene::Scene()
 	{
-		m_Camera = sPtrCreate<Camera>(glm::vec3(100.0f, 100.0f, 100.0f));
+#ifdef YU_RELEASE
+		Dispatcher::Subscribe<KeyboardKeyPress>(this);
+		Dispatcher::Subscribe<MouseButtonPress>(this);
+		Dispatcher::Subscribe<MouseScroll>(this);
+		Dispatcher::Subscribe<ImportAssetEvent>(this);
+#endif
 	}
 
 	/**
@@ -43,10 +48,16 @@ namespace Yugo
 			);
 		ResourceManager::AddShader("animatedModelShader", animatedModelShader);
 
-		m_Camera->OnStart();
+		//m_Camera->OnStart();
+		auto cameraEntity = CreateEntity();
+		auto& transform = cameraEntity.AddComponent<TransformComponent>();
+		auto& camera = cameraEntity.AddComponent<CameraComponent>();
+		auto& tag = cameraEntity.AddComponent<EntityTagComponent>();
+		tag.Name = "Main Camera";
+		Camera::OnStart(transform, camera);
 
-		MeshRenderer::SetCamera(m_Camera);
-		Renderer2D::SetCamera(m_Camera);
+		//MeshRenderer::SetCamera(m_Camera);
+		//Renderer2D::SetCamera(m_Camera);
 	}
 
 	/**
@@ -60,7 +71,36 @@ namespace Yugo
 	{
 		if (event.GetEventType() == EventType::MouseButtonPress)
 		{
+			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
+			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
+			{
+				auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
+				for (auto entity : view)
+				{
+					auto& tag = view.get<EntityTagComponent>(entity);
+					if (tag.Name == "Main Camera")
+					{
+						auto& camera = view.get<CameraComponent>(entity);
+						Camera::ResetMousePositionOffset(camera);
+					}
+				}
+			}
+		}
 
+		if (event.GetEventType() == EventType::MouseScroll)
+		{
+			const auto& mouseScroll = static_cast<const MouseScroll&>(event);
+
+			auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
+			for (auto entity : view)
+			{
+				auto& tag = view.get<EntityTagComponent>(entity);
+				if (tag.Name == "Main Camera")
+				{
+					auto& camera = view.get<CameraComponent>(entity);
+					Camera::Scroll(mouseScroll.GetOffsetY(), camera);
+				}
+			}
 		}
 	}
 
@@ -71,21 +111,32 @@ namespace Yugo
 	 *
 	 * @param timeStep Duration of each frame.
      */
-	void Scene::OnUpdate(float timeStep)
+	void Scene::OnUpdate(TimeStep ts)
 	{
-		m_Camera->OnUpdate(timeStep);
-
-		auto view = m_Registry.view<TransformComponent>(entt::exclude<SpriteComponent>);
-		for (auto entity : view)
 		{
-			auto& transform = view.get<TransformComponent>(entity);
+			//m_Camera->OnUpdate(ts);
+			auto view = m_Registry.view<CameraComponent, TransformComponent, EntityTagComponent>();
+			for (auto entity : view)
+			{
+				auto& [camera, transform, tag] = view.get<CameraComponent, TransformComponent, EntityTagComponent>(entity);
+				if (tag.Name == "Main Camera")
+					Camera::Move(ts, transform, camera);
+			}
+		}
 
-			transform.ModelMatrix = glm::mat4(1.0f);
-			transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
-			transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-			transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-			transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-			transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
+		{
+			auto view = m_Registry.view<TransformComponent>(entt::exclude<SpriteComponent>);
+			for (auto entity : view)
+			{
+				auto& transform = view.get<TransformComponent>(entity);
+
+				transform.ModelMatrix = glm::mat4(1.0f);
+				transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
+				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+				transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
+			}
 		}
 	}
 
@@ -99,30 +150,39 @@ namespace Yugo
 		MeshRenderer::ClearColorBuffer(0.3f, 0.3f, 0.3f);
 		MeshRenderer::ClearDepthBuffer();
 
-		Renderer2D::DrawGrid(glm::vec3(0.0f, 0.0f, 0.0f), 100, glm::vec3(50.0f, 50.0f, 50.0f), glm::vec3(0.2f, 0.2f, 0.2f));
-
-		MeshRenderer::ClearDepthBuffer(); // TODO: Check how to fix this double call
-		
-		// Render meshes with animations
+		auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
+		for (auto entity : view)
 		{
-			auto view = m_Registry.view<MeshComponent, TransformComponent, AnimationComponent>();
-			for (auto entity : view)
+			auto& tag = view.get<EntityTagComponent>(entity);
+			if (tag.Name == "Main Camera")
 			{
-				auto& [mesh, transform, animation] = view.get<MeshComponent, TransformComponent, AnimationComponent>(entity);
-				if (animation.IsAnimationRunning)
-					MeshRenderer::Render(mesh, transform, ResourceManager::GetShader("animatedModelShader"));
-				else
-					MeshRenderer::Render(mesh, transform, ResourceManager::GetShader("modelShader"));
-			}
-		}
+				auto& camera = view.get<CameraComponent>(entity);
+				Renderer2D::DrawGrid(camera, glm::vec3(0.0f, 0.0f, 0.0f), 100, glm::vec3(50.0f, 50.0f, 50.0f), glm::vec3(0.2f, 0.2f, 0.2f));
 
-		// Render meshes without animations
-		{
-			auto view = m_Registry.view<MeshComponent, TransformComponent>(entt::exclude<AnimationComponent>);
-			for (auto entity : view)
-			{
-				auto& [mesh, transform] = view.get<MeshComponent, TransformComponent>(entity);
-				MeshRenderer::Render(mesh, transform, ResourceManager::GetShader("modelShader"));
+				MeshRenderer::ClearDepthBuffer(); // TODO: Check how to fix this double call
+
+				// Render meshes with animations
+				{
+					auto view = m_Registry.view<MeshComponent, TransformComponent, AnimationComponent>();
+					for (auto entity : view)
+					{
+						auto& [mesh, transform, animation] = view.get<MeshComponent, TransformComponent, AnimationComponent>(entity);
+						if (animation.IsAnimationRunning)
+							MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("animatedModelShader"));
+						else
+							MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("modelShader"));
+					}
+				}
+
+				// Render meshes without animations
+				{
+					auto view = m_Registry.view<MeshComponent, TransformComponent>(entt::exclude<AnimationComponent>);
+					for (auto entity : view)
+					{
+						auto& [mesh, transform] = view.get<MeshComponent, TransformComponent>(entity);
+						MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("modelShader"));
+					}
+				}
 			}
 		}
 	}

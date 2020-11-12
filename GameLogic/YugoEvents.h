@@ -10,5 +10,6 @@ namespace GameLogic
 	using EventType = Yugo::EventType;
 	using MouseButtonPress = Yugo::MouseButtonPress;
 	using KeyboardKeyPress = Yugo::KeyboardKeyPress;
-
+	using KeyCode = Yugo::KeyCode;
+	using MouseCode = Yugo::MouseCode;
 }

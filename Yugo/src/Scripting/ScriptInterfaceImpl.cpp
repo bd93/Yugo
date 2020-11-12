@@ -6,99 +6,109 @@
 namespace Yugo
 {
 
-	bool ScriptInterfaceImpl::IsKeyboardkeyPressed(KeyCode key)
-	{
-		return UserInput::IsKeyboardKeyPressed(key);
-	}
-
-	bool ScriptInterfaceImpl::IsMouseButtonPressed(MouseCode button)
-	{
-		return UserInput::IsMouseButtonPressed(button);
-	}
-
-	bool ScriptInterfaceImpl::IsMouseHoveringRect(TransformComponent& transform)
-	{
-		//return UserInput::IsMouseHoveringRect(transform, mousePos);
-		return MouseRay::CheckCollisionWithSprite(transform);
-	}
-
-	//glm::vec2 ScriptInterfaceImpl::GetMousePosition()
+	//bool ScriptInterfaceImpl::IsKeyboardkeyPressed(KeyCode key)
 	//{
-	//	//auto [mousePosX, mousePosY] = UserInput::GetMousePosition();
-	//	//const auto& projection = SpriteRenderer::GetProjection();
-
-	//	//// Transform mouse viewport coords to normalized device coords
-	//	//float mouseNdcX = (2.0f * mousePosX) / 1600.0f - 1.0f; // TEMP!
-	//	//float mouseNdcY = 1.0f - (2.0f * mousePosY) / 1200.0f; // TEMP!
-
-	//	//// Transform normalized device coords to clip coords
-	//	//glm::vec4 clipCoords = glm::vec4(mouseNdcX, mouseNdcY, -1.0f, 1.0f);
-
-	//	//// Transform clip coords to eye space coords
-	//	//glm::vec4 eyeCoords = glm::inverse(projection) * clipCoords;
-
-	//	//return glm::vec2(eyeCoords.x, eyeCoords.y);
+	//	return UserInput::IsKeyboardKeyPressed(key);
 	//}
 
-	Entity& ScriptInterfaceImpl::GetEntity()
-	{
-		return m_Entity;
-	}
+	//bool ScriptInterfaceImpl::IsMouseButtonPressed(MouseCode button)
+	//{
+	//	return UserInput::IsMouseButtonPressed(button);
+	//}
 
-	void ScriptInterfaceImpl::SetEntity(Entity& entity)
-	{
-		m_Entity = entity;
-	}
+	//bool ScriptInterfaceImpl::IsMouseHoveringRect(TransformComponent& transform)
+	//{
+	//	//return UserInput::IsMouseHoveringRect(transform, mousePos);
+	//	return MouseRay::CheckCollisionWithSprite(transform);
+	//}
 
-	TransformComponent& ScriptInterfaceImpl::GetTransformComponent()
-	{
-		return m_Entity.GetComponent<TransformComponent>();
-	}
+	////glm::vec2 ScriptInterfaceImpl::GetMousePosition()
+	////{
+	////	//auto [mousePosX, mousePosY] = UserInput::GetMousePosition();
+	////	//const auto& projection = SpriteRenderer::GetProjection();
 
-	MeshComponent& ScriptInterfaceImpl::GetMeshComponent()
-	{
-		return m_Entity.GetComponent<MeshComponent>();
-	}
+	////	//// Transform mouse viewport coords to normalized device coords
+	////	//float mouseNdcX = (2.0f * mousePosX) / 1600.0f - 1.0f; // TEMP!
+	////	//float mouseNdcY = 1.0f - (2.0f * mousePosY) / 1200.0f; // TEMP!
 
-	AnimationComponent& ScriptInterfaceImpl::GetAnimationComponent()
-	{
-		return m_Entity.GetComponent<AnimationComponent>();
-	}
+	////	//// Transform normalized device coords to clip coords
+	////	//glm::vec4 clipCoords = glm::vec4(mouseNdcX, mouseNdcY, -1.0f, 1.0f);
 
-	EntityTagComponent& ScriptInterfaceImpl::GetEntityTagComponent()
-	{
-		return m_Entity.GetComponent<EntityTagComponent>();
-	}
+	////	//// Transform clip coords to eye space coords
+	////	//glm::vec4 eyeCoords = glm::inverse(projection) * clipCoords;
 
-	SpriteComponent& ScriptInterfaceImpl::GetSpriteComponent()
-	{
-		return m_Entity.GetComponent<SpriteComponent>();
-	}
+	////	//return glm::vec2(eyeCoords.x, eyeCoords.y);
+	////}
 
-	bool ScriptInterfaceImpl::HasTransformComponent()
-	{
-		return m_Entity.HasComponent<TransformComponent>();
-	}
+	//Entity& ScriptInterfaceImpl::GetEntity()
+	//{
+	//	return m_Entity;
+	//}
 
-	bool ScriptInterfaceImpl::HasMeshComponent()
-	{
-		return m_Entity.HasComponent<MeshComponent>();
-	}
+	//void ScriptInterfaceImpl::SetEntity(Entity& entity)
+	//{
+	//	m_Entity = entity;
+	//}
 
-	bool ScriptInterfaceImpl::HasAnimationComponent()
-	{
-		return m_Entity.HasComponent<AnimationComponent>();
-	}
+	//TransformComponent& ScriptInterfaceImpl::GetTransformComponent()
+	//{
+	//	return m_Entity.GetComponent<TransformComponent>();
+	//}
 
-	bool ScriptInterfaceImpl::HasEntityTagComponent()
-	{
-		return m_Entity.HasComponent<EntityTagComponent>();;
-	}
+	//MeshComponent& ScriptInterfaceImpl::GetMeshComponent()
+	//{
+	//	return m_Entity.GetComponent<MeshComponent>();
+	//}
 
-	bool ScriptInterfaceImpl::HasSpriteComponent()
-	{
-		return m_Entity.HasComponent<SpriteComponent>();;
-	}
+	//AnimationComponent& ScriptInterfaceImpl::GetAnimationComponent()
+	//{
+	//	return m_Entity.GetComponent<AnimationComponent>();
+	//}
+
+	//EntityTagComponent& ScriptInterfaceImpl::GetEntityTagComponent()
+	//{
+	//	return m_Entity.GetComponent<EntityTagComponent>();
+	//}
+
+	//SpriteComponent& ScriptInterfaceImpl::GetSpriteComponent()
+	//{
+	//	return m_Entity.GetComponent<SpriteComponent>();
+	//}
+
+	//ScriptComponent& ScriptInterfaceImpl::GetScriptComponent()
+	//{
+	//	return m_Entity.GetComponent<ScriptComponent>();
+	//}
+
+	//bool ScriptInterfaceImpl::HasTransformComponent()
+	//{
+	//	return m_Entity.HasComponent<TransformComponent>();
+	//}
+
+	//bool ScriptInterfaceImpl::HasMeshComponent()
+	//{
+	//	return m_Entity.HasComponent<MeshComponent>();
+	//}
+
+	//bool ScriptInterfaceImpl::HasAnimationComponent()
+	//{
+	//	return m_Entity.HasComponent<AnimationComponent>();
+	//}
+
+	//bool ScriptInterfaceImpl::HasEntityTagComponent()
+	//{
+	//	return m_Entity.HasComponent<EntityTagComponent>();
+	//}
+
+	//bool ScriptInterfaceImpl::HasSpriteComponent()
+	//{
+	//	return m_Entity.HasComponent<SpriteComponent>();
+	//}
+
+	//bool ScriptInterfaceImpl::HasScriptComponent()
+	//{
+	//	return m_Entity.HasComponent<ScriptComponent>();
+	//}
 
 
 }

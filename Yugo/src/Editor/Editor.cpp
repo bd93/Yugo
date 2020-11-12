@@ -2,7 +2,7 @@
 #include "Editor.h"
 #include "Animation/Components.h"
 #include "Animation/Animation.h"
-#include "Scripting/ScriptComponent.h"
+#include "Scripting/Components.h"
 #include "Core/Time.h"
 #include "Core/ModelImporter.h"
 #include "Renderer/SpriteRenderer.h"
@@ -217,12 +217,20 @@ namespace Yugo
 			for (auto entity : view)
 			{
 				auto& [aabb, transform] = view.get<BoundBoxComponent, TransformComponent>(entity);
-				MeshRenderer::DrawAABB(aabb, transform, ResourceManager::GetShader("quadShader"));
+				auto view =m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+				for (auto entity : view)
+				{
+					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
+					if (tag.Name == "Main Camera")
+					{
+						MeshRenderer::DrawAABB(aabb, transform, camera, ResourceManager::GetShader("quadShader"));
 
-				//for (const auto& subAABB : aabb.SubAABBs)
-				//{
-				//	MeshRenderer::DrawAABB(subAABB, transform, ResourceManager::GetShader("quadShader"));
-				//}
+						//for (const auto& subAABB : aabb.SubAABBs)
+						//{
+						//	MeshRenderer::DrawAABB(subAABB, transform, ResourceManager::GetShader("quadShader"));
+						//}
+					}
+				}
 			}
 		}
 		if (s_RenderUI || s_PlayMode)
@@ -257,7 +265,7 @@ namespace Yugo
 		}
 	}
 
-	void Editor::OnUpdate(float ts)
+	void Editor::OnUpdate(TimeStep ts)
 	{
 		if (s_PlayMode)
 		{
@@ -277,6 +285,17 @@ namespace Yugo
 				if (animation.IsAnimationRunning)
 					Animation::RunAnimation(mesh, animation);
 			}
+
+			if (UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL) && UserInput::IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && m_IsSceneWindowHovered)
+			{
+				auto view = m_Scene->m_Registry.view<CameraComponent, TransformComponent, EntityTagComponent>();
+				for (auto entity : view)
+				{
+					auto& [camera, transform, tag] = view.get<CameraComponent, TransformComponent, EntityTagComponent>(entity);
+					if (tag.Name == "Main Camera")
+						Camera::RotateAroundPivot(transform, camera);
+				}
+			}
 		}
 
 		if (s_RenderUI)
@@ -290,17 +309,15 @@ namespace Yugo
 			if (event.GetEventType() == EventType::MouseButtonPress)
 			{
 				const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
-				if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT && m_IsSceneWindowHovered)
+				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+				for (auto entity : view)
 				{
-					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL)) // TODO: fix this situation where specific keys needs to be negated!
-					{
-						//MouseRay::CalculateRayOrigin(m_Scene->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
-						//m_UserInterface->OnEvent(event);
-						MouseRay::CalculateRayOrigin(m_UserInterface->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
-						m_ScriptEngine->OnEvent(event);
-					}
+					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
+					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL) && m_IsSceneWindowHovered) // TODO: fix this situation where specific keys needs to be negated!
+						MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 				}
 			}
+			m_ScriptEngine->OnEvent(event);
 		}
 		else
 		{
@@ -311,8 +328,16 @@ namespace Yugo
 				{
 					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL)) // TODO: fix this situation where specific keys needs to be negated!
 					{
-						MouseRay::CalculateRayOrigin(m_Scene->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
-						SelectMesh();
+						auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+						for (auto entity : view)
+						{
+							auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
+							if (tag.Name == "Main Camera")
+							{
+								MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
+								SelectMesh();
+							}
+						}
 					}
 				}
 			}
@@ -320,18 +345,29 @@ namespace Yugo
 			// Import asset event is invoked when user drag and drop asset to scene imgui window 
 			if (event.GetEventType() == EventType::ImportAsset)
 			{
-				MouseRay::CalculateRayOrigin(m_Scene->m_Camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
-
+				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+				for (auto entity : view)
+				{
+					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
+					if (tag.Name == "Main Camera")
+					{
+						camera = view.get<CameraComponent>(entity);
+						MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
+					}
+				}
+				
 				const auto& importAssetEvent = static_cast<const ImportAssetEvent&>(event);
 				const auto& importAssetFilePath = importAssetEvent.GetAssetFilePath();
 
 				ImportAsset(importAssetFilePath);
 			}
 
-			if (event.GetEventType() == EventType::MouseScroll && m_IsSceneWindowHovered)
-			{
-				m_Scene->m_Camera->OnEvent(event);
-			}
+			//if (event.GetEventType() == EventType::MouseScroll && m_IsSceneWindowHovered)
+			//{
+			//	m_Scene->OnEvent(event);
+			//}
+			if (m_IsSceneWindowHovered)
+				m_Scene->OnEvent(event); // TODO: Check better solution! Should scene be subscribed to events?
 		}
 	}
 
@@ -1025,17 +1061,27 @@ namespace Yugo
 		if (m_SelectedSceneEntity != entt::null)
 		{
 			auto& transform = m_Scene->m_Registry.get<TransformComponent>(m_SelectedSceneEntity);
-			const auto& viewMatrix = m_Scene->m_Camera->GetViewMatrix();
+
 			if (m_Scene->m_Registry.has<SpriteComponent>(m_SelectedSceneEntity))
 			{
 				// For UI rendering
-				auto& projectionMatrix = m_UserInterface->m_Camera->GetProjectionMatrix();
-				ShowImGuizmoWidget(transform, projectionMatrix, glm::mat4(1.0f));
+				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+				for (auto entity : view)
+				{
+					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
+					if (tag.Name == "UI Camera")
+						ShowImGuizmoWidget(transform, camera.Projection, glm::mat4(1.0f));
+				}
 			}
 			else
 			{
-				const auto& projectionMatrix = m_Scene->m_Camera->GetProjectionMatrix();
-				ShowImGuizmoWidget(transform, projectionMatrix, viewMatrix);
+				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+				for (auto entity : view)
+				{
+					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
+					if (tag.Name == "Main Camera")
+						ShowImGuizmoWidget(transform, camera.Projection, camera.View);
+				}
 			}
 		}
 		

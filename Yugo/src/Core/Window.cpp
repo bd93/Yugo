@@ -23,7 +23,7 @@ namespace Yugo
 		glfwMakeContextCurrent(s_GLFWwindow);
 	}
 
-	void Window::OnUpdate(float ts)
+	void Window::OnUpdate(TimeStep ts)
 	{
 	}
 

@@ -200,6 +200,7 @@ project "GameLogic"
     
         includedirs
         {
+            "GameLogic",
             "Yugo/src",
             "Yugo/vendor",
             "%{IncludeDir.GLFW}",

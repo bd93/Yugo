@@ -29,6 +29,124 @@ namespace Yugo
 		return entities;
 	}
 
+	std::vector<entt::entity>& GameObjectInterfaceImpl::GetEntitiesWithButtonWidgetComponent()
+	{
+		static std::vector<entt::entity> entities; // static because it can't return heap allocated obj from static lib to dll
+		// Clear already used entities
+		if (entities.size() > 0)
+			entities.clear();
+
+		auto view = m_Scene->GetView<ButtonWidgetComponent>();
+		for (auto entity : view)
+			entities.push_back(entity);
+
+		return entities;
+	}
+
+	std::vector<entt::entity>& GameObjectInterfaceImpl::GetEntitiesWithCanvasWidgetComponent()
+	{
+		static std::vector<entt::entity> entities; // static because it can't return heap allocated obj from static lib to dll
+		// Clear already used entities
+		if (entities.size() > 0)
+			entities.clear();
+
+		auto view = m_Scene->GetView<CanvasWidgetComponent>();
+		for (auto entity : view)
+			entities.push_back(entity);
+
+		return entities;
+	}
+
+	std::vector<entt::entity>& GameObjectInterfaceImpl::GetEntitiesWithTextWidgetComponent()
+	{
+		static std::vector<entt::entity> entities; // static because it can't return heap allocated obj from static lib to dll
+		// Clear already used entities
+		if (entities.size() > 0)
+			entities.clear();
+
+		auto view = m_Scene->GetView<TextWidgetComponent>();
+		for (auto entity : view)
+			entities.push_back(entity);
+
+		return entities;
+	}
+
+	//std::vector<GameLogic::GameObject>& GameObjectInterfaceImpl::GetGameObjectsWithEntityTagComponent()
+	//{
+	//	static std::vector<GameLogic::GameObject> gameObjects; // static because it can't return heap allocated obj from static lib to dll
+	//	// Clear already used entities
+	//	if (gameObjects.size() > 0)
+	//		gameObjects.clear();
+
+	//	GameLogic::GameObject gameObject;
+
+	//	auto view = m_Scene->GetView<EntityTagComponent>();
+	//	for (auto entity : view)
+	//	{
+	//		gameObject.SetEntity(entity);
+	//		gameObjects.push_back(gameObject);
+	//	}
+
+	//	return gameObjects;
+	//}
+
+	//std::vector<GameLogic::GameObject>& GameObjectInterfaceImpl::GetGameObjectsWithButtonWidgetComponent()
+	//{
+	//	static std::vector<GameLogic::GameObject> gameObjects; // static because it can't return heap allocated obj from static lib to dll
+	//	// Clear already used entities
+	//	if (gameObjects.size() > 0)
+	//		gameObjects.clear();
+
+	//	GameLogic::GameObject gameObject;
+
+	//	auto view = m_Scene->GetView<ButtonWidgetComponent>();
+	//	for (auto entity : view)
+	//	{
+	//		gameObject.SetEntity(entity);
+	//		gameObjects.push_back(gameObject);
+	//	}
+
+	//	return gameObjects;
+	//}
+
+	//std::vector<GameLogic::GameObject>& GameObjectInterfaceImpl::GetGameObjectsWithCanvasWidgetComponent()
+	//{
+	//	static std::vector<GameLogic::GameObject> gameObjects; // static because it can't return heap allocated obj from static lib to dll
+	//	// Clear already used entities
+	//	if (gameObjects.size() > 0)
+	//		gameObjects.clear();
+
+	//	GameLogic::GameObject gameObject;
+
+	//	auto view = m_Scene->GetView<CanvasWidgetComponent>();
+	//	for (auto entity : view)
+	//	{
+	//		gameObject.SetEntity(entity);
+	//		gameObjects.push_back(gameObject);
+	//	}
+
+	//	return gameObjects;
+	//}
+
+	//std::vector<GameLogic::GameObject>& GameObjectInterfaceImpl::GetGameObjectsWithTextWidgetComponent()
+	//{
+	//	static std::vector<GameLogic::GameObject> gameObjects; // static because it can't return heap allocated obj from static lib to dll
+	//	// Clear already used entities
+	//	if (gameObjects.size() > 0)
+	//		gameObjects.clear();
+
+	//	GameLogic::GameObject gameObject;
+
+	//	auto view = m_Scene->GetView<TextWidgetComponent>();
+	//	for (auto entity : view)
+	//	{
+	//		gameObject.SetEntity(entity);
+	//		gameObjects.push_back(gameObject);
+	//	}
+
+	//	return gameObjects;
+	//}
+
 	TransformComponent& GameObjectInterfaceImpl::GetTransformComponent(entt::entity entity)
 	{
 		return m_Scene->GetComponent<TransformComponent>(entity);
@@ -47,6 +165,16 @@ namespace Yugo
 	EntityTagComponent& GameObjectInterfaceImpl::GetEntityTagComponent(entt::entity entity)
 	{
 		return m_Scene->GetComponent<EntityTagComponent>(entity);
+	}
+
+	ScriptComponent& GameObjectInterfaceImpl::GetScriptComponent(entt::entity entity)
+	{
+		return m_Scene->GetComponent<ScriptComponent>(entity);
+	}
+
+	CameraComponent& GameObjectInterfaceImpl::GetCameraComponent(entt::entity entity)
+	{
+		return m_Scene->GetComponent<CameraComponent>(entity);
 	}
 
 	std::vector<CanvasWidgetComponent*>& GameObjectInterfaceImpl::GetCanvasWidgetComponentsInChildren(entt::entity entity)
@@ -183,6 +311,16 @@ namespace Yugo
 	bool GameObjectInterfaceImpl::HasEntityTagComponent(entt::entity entity)
 	{
 		return m_Scene->HasComponent<EntityTagComponent>(entity);
+	}
+
+	bool GameObjectInterfaceImpl::HasScriptComponent(entt::entity entity)
+	{
+		return m_Scene->HasComponent<ScriptComponent>(entity);
+	}
+
+	bool GameObjectInterfaceImpl::HasCameraComponent(entt::entity entity)
+	{
+		return m_Scene->HasComponent<CameraComponent>(entity);
 	}
 
 }

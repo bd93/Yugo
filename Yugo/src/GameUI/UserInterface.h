@@ -20,7 +20,7 @@ namespace Yugo
 
 		void OnStart();
 		void OnEvent(const Event& event);
-		void OnUpdate(float ts);
+		void OnUpdate(TimeStep ts);
 		void OnRender();
 		void OnShutdown();
 
@@ -31,7 +31,7 @@ namespace Yugo
 
 	private:
 		sPtr<Scene> m_Scene; // TEMPORARY!
-		sPtr<Camera> m_Camera;
+		//sPtr<Camera> m_Camera;
 		entt::registry m_Registry;
 	};
 
