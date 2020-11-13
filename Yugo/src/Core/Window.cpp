@@ -7,20 +7,22 @@
 namespace Yugo
 {
 
-	GLFWwindow* Window::s_GLFWwindow = NULL;
+	//GLFWwindow* Window::s_GLFWwindow = NULL;
 	
 	Window::Window(const std::string& windowName, int width, int height)
-		: m_WindowName(windowName),
+		: m_GLFWwindow(nullptr),
+		m_WindowName(windowName),
 		m_Width(width),
 		m_Height(height)
 	{
+#ifdef YU_RELEASE
+		m_Scene = sPtrCreate<Scene>();
+#endif
 	}
 
 	void Window::OnStart()
 	{
-		InitGLFW();
 		SetEventCallbacks();
-		glfwMakeContextCurrent(s_GLFWwindow);
 	}
 
 	void Window::OnUpdate(TimeStep ts)
@@ -59,18 +61,17 @@ namespace Yugo
 
 	void Window::OnShutdown()
 	{
-		glfwDestroyWindow(s_GLFWwindow);
-		glfwTerminate();
+		glfwDestroyWindow(m_GLFWwindow);
 	}
 
 	bool Window::WindowShouldClose()
 	{
-		return glfwWindowShouldClose(s_GLFWwindow);
+		return glfwWindowShouldClose(m_GLFWwindow);
 	}
 
 	void Window::SwapBuffers()
 	{
-		glfwSwapBuffers(s_GLFWwindow);
+		glfwSwapBuffers(m_GLFWwindow);
 	}
 
 	void Window::PollEvents()
@@ -78,21 +79,21 @@ namespace Yugo
 		glfwPollEvents();
 	}
 
-	GLFWwindow* Window::GetGLFWwindow()
+	void Window::MakeContextCurrent(GLFWwindow* glfwWindow)
 	{
-		return s_GLFWwindow;
+		glfwMakeContextCurrent(glfwWindow);
 	}
 
-	void Window::InitGLFW()
+	void Window::TerminateGLFW()
 	{
-		glfwInit();
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+		glfwTerminate();
+	}
 
-		s_GLFWwindow = glfwCreateWindow(m_Width, m_Height, m_WindowName.c_str(), NULL, NULL);
+	void Window::CreateGLFWwindow()
+	{
+		m_GLFWwindow = glfwCreateWindow(m_Width, m_Height, m_WindowName.c_str(), NULL, NULL);
 
-		if (s_GLFWwindow == NULL)
+		if (m_GLFWwindow == NULL)
 		{
 			std::cout << "Failed to create GLFW window" << std::endl;
 			glfwTerminate();
@@ -101,7 +102,7 @@ namespace Yugo
 
 	void Window::SetEventCallbacks()
 	{
-		glfwSetFramebufferSizeCallback(s_GLFWwindow, [](GLFWwindow* window, int width, int height)
+		glfwSetFramebufferSizeCallback(m_GLFWwindow, [](GLFWwindow* window, int width, int height)
 			{
 				glViewport(0, 0, width, height);
 				WindowResize resizeEvent{ width, height };
@@ -109,7 +110,7 @@ namespace Yugo
 			}
 		);
 
-		glfwSetKeyCallback(s_GLFWwindow, [](GLFWwindow* window, int key, int scancode, int action, int mods)
+		glfwSetKeyCallback(m_GLFWwindow, [](GLFWwindow* window, int key, int scancode, int action, int mods)
 			{
 				if (action == GLFW_PRESS)
 				{
@@ -124,7 +125,7 @@ namespace Yugo
 			}
 		);
 
-		glfwSetMouseButtonCallback(s_GLFWwindow, [](GLFWwindow* window, int button, int action, int mods)
+		glfwSetMouseButtonCallback(m_GLFWwindow, [](GLFWwindow* window, int button, int action, int mods)
 			{
 				if (action == GLFW_PRESS)
 				{
@@ -139,7 +140,7 @@ namespace Yugo
 			}
 		);
 
-		glfwSetScrollCallback(s_GLFWwindow, [](GLFWwindow* window, double offsetX, double offsetY) 
+		glfwSetScrollCallback(m_GLFWwindow, [](GLFWwindow* window, double offsetX, double offsetY) 
 			{
 				MouseScroll scrollEvent{ (float)offsetX, (float)offsetY };
 				Dispatcher::Publish<MouseScroll>(scrollEvent);

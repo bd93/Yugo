@@ -18,24 +18,26 @@ namespace Yugo
 
 	Scene::Scene()
 	{
+		m_UserInterface = uPtrCreate<UserInterface>(this);
+	}
+
+	/**
+	 * @brief Method to be called during application OnStart stage.
+     *
+     * This method adds necessary assets to ResourceManager's unordered maps.
+     * ResourceManager can be used anywhere in code in order to retreive assets.
+     * The idea is to load necessary assets only once at the beginning of app and use it later.
+	 * It also initialize camera and game UI.
+     */
+	void Scene::OnStart()
+	{
 #ifdef YU_RELEASE
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
 		Dispatcher::Subscribe<MouseButtonPress>(this);
 		Dispatcher::Subscribe<MouseScroll>(this);
 		Dispatcher::Subscribe<ImportAssetEvent>(this);
 #endif
-	}
 
-	/**
-	 * @brief Method to be called during application OnStart stage.
-     *
-     * This method adds necessary assets to ResourceManager's unordered map static members.
-     * ResourceManager can be used anywhere in code in order to retreive assets.
-     * The idea is to load necessary assets only once at the beginning of app and use it later.
-	 * It also initialize camera and sets it in renderers.
-     */
-	void Scene::OnStart()
-	{
 		Shader modelShader(
 			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\model_vertex.shader",
 			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\model_fragment.shader"
@@ -48,16 +50,14 @@ namespace Yugo
 			);
 		ResourceManager::AddShader("animatedModelShader", animatedModelShader);
 
-		//m_Camera->OnStart();
+		m_UserInterface->OnStart();
+
 		auto cameraEntity = CreateEntity();
 		auto& transform = cameraEntity.AddComponent<TransformComponent>();
 		auto& camera = cameraEntity.AddComponent<CameraComponent>();
 		auto& tag = cameraEntity.AddComponent<EntityTagComponent>();
 		tag.Name = "Main Camera";
 		Camera::OnStart(transform, camera);
-
-		//MeshRenderer::SetCamera(m_Camera);
-		//Renderer2D::SetCamera(m_Camera);
 	}
 
 	/**
@@ -69,39 +69,6 @@ namespace Yugo
      */
 	void Scene::OnEvent(const Event& event)
 	{
-		if (event.GetEventType() == EventType::MouseButtonPress)
-		{
-			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
-			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
-			{
-				auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
-				for (auto entity : view)
-				{
-					auto& tag = view.get<EntityTagComponent>(entity);
-					if (tag.Name == "Main Camera")
-					{
-						auto& camera = view.get<CameraComponent>(entity);
-						Camera::ResetMousePositionOffset(camera);
-					}
-				}
-			}
-		}
-
-		if (event.GetEventType() == EventType::MouseScroll)
-		{
-			const auto& mouseScroll = static_cast<const MouseScroll&>(event);
-
-			auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
-			for (auto entity : view)
-			{
-				auto& tag = view.get<EntityTagComponent>(entity);
-				if (tag.Name == "Main Camera")
-				{
-					auto& camera = view.get<CameraComponent>(entity);
-					Camera::Scroll(mouseScroll.GetOffsetY(), camera);
-				}
-			}
-		}
 	}
 
 	/**
@@ -113,8 +80,8 @@ namespace Yugo
      */
 	void Scene::OnUpdate(TimeStep ts)
 	{
+		// Update camera
 		{
-			//m_Camera->OnUpdate(ts);
 			auto view = m_Registry.view<CameraComponent, TransformComponent, EntityTagComponent>();
 			for (auto entity : view)
 			{
@@ -123,7 +90,7 @@ namespace Yugo
 					Camera::Move(ts, transform, camera);
 			}
 		}
-
+		// Update entity
 		{
 			auto view = m_Registry.view<TransformComponent>(entt::exclude<SpriteComponent>);
 			for (auto entity : view)
@@ -138,6 +105,8 @@ namespace Yugo
 				transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
 			}
 		}
+		// Update game UI
+		m_UserInterface->OnUpdate(ts);
 	}
 
 	/**
@@ -185,6 +154,8 @@ namespace Yugo
 				}
 			}
 		}
+
+		m_UserInterface->OnRender();
 	}
 
 	/**
@@ -194,6 +165,8 @@ namespace Yugo
      */
 	void Scene::OnShutdown()
 	{
+		m_UserInterface->OnShutdown();
+		// TODO: Scene shutdown goes here...
 	}
 
 	/**

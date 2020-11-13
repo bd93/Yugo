@@ -97,7 +97,7 @@ namespace Yugo
 		static void DisableBlend();
 
 	public:
-		static void Init();
+		static void OnStart();
 		//static void SetCamera(const sPtr<Camera>& camera);
 		// r = red, g = green, b = blue
 		static void ClearColorBuffer(float r, float g, float b);

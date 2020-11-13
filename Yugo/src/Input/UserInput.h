@@ -18,6 +18,8 @@ namespace Yugo
 		//static bool IsMouseHoveringRect(TransformComponent& transform, const glm::vec2& mousePos);
 		static std::pair<float, float> GetMousePosition();
 
+		static void SetGLFWwindow(GLFWwindow* glfwWindow);
+
 	private:
 		static float s_FramebufferWidth;
 		static float s_FramebufferHeight;

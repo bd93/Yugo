@@ -5,17 +5,17 @@
 
 namespace Yugo
 {
-
+	GLFWwindow* s_GLFWwindow = nullptr; // Current glfw window, which can be changed
 
 	bool UserInput::IsKeyboardKeyPressed(KeyCode key)
 	{
-		auto state = glfwGetKey(Window::GetGLFWwindow(), static_cast<int32_t>(key));
+		auto state = glfwGetKey(s_GLFWwindow, static_cast<int32_t>(key));
 		return state == GLFW_PRESS;
 	}
 
 	bool UserInput::IsMouseButtonPressed(MouseCode button)
 	{
-		auto state = glfwGetMouseButton(Window::GetGLFWwindow(), static_cast<int32_t>(button));
+		auto state = glfwGetMouseButton(s_GLFWwindow, static_cast<int32_t>(button));
 		return state == GLFW_PRESS;
 	}
 
@@ -35,9 +35,14 @@ namespace Yugo
 	std::pair<float, float> UserInput::GetMousePosition()
 	{
 		double mousePosX, mousePosY;
-		glfwGetCursorPos(Window::GetGLFWwindow(), &mousePosX, &mousePosY);
+		glfwGetCursorPos(s_GLFWwindow, &mousePosX, &mousePosY);
 
 		return { (float)mousePosX, (float)mousePosY };
+	}
+
+	void UserInput::SetGLFWwindow(GLFWwindow* glfwWindow)
+	{
+		s_GLFWwindow = glfwWindow;
 	}
 
 }

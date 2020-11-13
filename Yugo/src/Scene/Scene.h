@@ -58,8 +58,7 @@ namespace Yugo
 
 	private:
 		entt::registry m_Registry; // Registry is kind of in-memory database storage for entities and components
-		//sPtr<Camera> m_Camera;
-		//MouseRay m_MouseRay; // On the left click mouse ray is casted in order to select object on the screen
+		uPtr<UserInterface> m_UserInterface;
 	};
 
 }

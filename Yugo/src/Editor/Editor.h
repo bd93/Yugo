@@ -16,6 +16,8 @@ namespace Yugo
 
 	class Editor
 	{
+		friend class Application;
+
 	public:
 		Editor();
 
@@ -27,10 +29,15 @@ namespace Yugo
 
 
 	private:
-		// Flags
+		uPtr<Window> m_MainWindow;
+		uPtr<Window> m_GameWindow; // Created as a second window when user clicks "Play Scene"
+		sPtr<Scene> m_Scene;
+		uPtr<ScriptEngine> m_ScriptEngine;
+
+		// Flags for Scene ImGui window inside editor
 		bool m_IsSceneWindowFocused;
 		bool m_IsSceneWindowHovered;
-		entt::entity m_SelectedSceneEntity;
+		entt::entity m_SelectedSceneEntity; // Entity that is selected on mouse left click
 
 		// Scene Framebuffer info (visible scene texture inside Scene ImGui window)
 		struct SceneInfo
@@ -44,7 +51,7 @@ namespace Yugo
 		};
 		SceneInfo m_SceneInfo;
 
-		// Relative to Scene Framebuffer
+		// Relative to Scene Framebuffer (visible scene texture inside Scene ImGui window)
 		struct MouseInfo
 		{
 			float MousePosX; 
@@ -53,10 +60,6 @@ namespace Yugo
 			float MouseOffsetY; 
 		};
 		MouseInfo m_MouseInfo;
-
-		sPtr<Scene> m_Scene;
-		sPtr<UserInterface> m_UserInterface;
-		uPtr<ScriptEngine> m_ScriptEngine; // TODO: consider changing to sPtr
 
 		/*
 		Active scene will be rendered in FrameBuffer;

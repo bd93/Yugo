@@ -6,20 +6,51 @@
 namespace Yugo
 {
 
+	Application::Application()
+	{
+#ifdef YU_DEBUG
+		m_Editor = uPtrCreate<Editor>();
+#endif
+#ifdef YU_RELEASE
+		m_Window = uPtrCreate<Window>();
+		m_ScriptEngine = uPtrCreate<ScriptEngine>();
+#endif
+	}
+
+	Application::~Application()
+	{
+		OnShutdown();
+	}
+
 	void Application::OnStart()
 	{
-		m_Window->OnStart();
+		InitGLFW();
+		m_Editor->m_MainWindow->CreateGLFWwindow();
+		Window::MakeContextCurrent(m_Editor->m_MainWindow->m_GLFWwindow);
 		InitOpenGL();
+
+#ifdef YU_DEBUG
 		m_Editor->OnStart();
-		Renderer2D::Init();
+#endif
+#ifdef YU_RELEASE
+		m_Window->CreateGLFWwindow();
+		UserInput::SetGLFWwindow(m_Window->m_GLFWwindow);
+		m_ScriptEngine->SetScene(m_Window->m_Scene.get());
+		// TODO: set script engine OnStart, OnStop, AttachScript methods!
+#endif
+
+		Renderer2D::OnStart();
 		Time::OnStart();
-		//m_ScriptEngine->OnStart();
 	}
 
 	void Application::OnShutdown()
 	{
+#ifdef YU_DEBUG
 		m_Editor->OnShutdown();
-		m_Window->OnShutdown();
+#endif
+#ifdef YU_RELEASE
+		m_ScriptEngine->OnShutdown();
+#endif
 	}
 
 	void Application::InitOpenGL()
@@ -30,16 +61,12 @@ namespace Yugo
 		}
 	}
 
-	Application::Application()
+	void Application::InitGLFW()
 	{
-		m_Window = uPtrCreate<Window>("Editor", 1200, 800);
-		m_Editor = uPtrCreate<Editor>();
-		//m_ScriptEngine = uPtrCreate<ScriptEngine>();
-	}
-
-	Application::~Application()
-	{
-		OnShutdown();
+		glfwInit();
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	}
 
 	void Yugo::Application::Run()
@@ -47,26 +74,34 @@ namespace Yugo
 		OnStart();
 
 		// Game loop
-		while (!m_Window->WindowShouldClose())
+		while (!m_Editor->m_MainWindow->WindowShouldClose())
 		{
-			m_Window->PollEvents();
-
-			// Input
-			m_Window->OnEvent();
-
-			//// Scripts
-			//m_ScriptEngine->OnUpdate(Time::GetDeltaTime());
+			Window::PollEvents();
 
 			// Update
-			m_Window->OnUpdate(Time::GetDeltaTime());
+#ifdef YU_DEBUG
 			m_Editor->OnUpdate(Time::GetDeltaTime());
+#endif
+#ifdef YU_RELEASE
+			m_ScriptEngine->OnUpdate(Time::GetDeltaTime());
+			m_Window->OnUpdate(Time::GetDeltaTime());
+#endif
 
 			// Render
-			//m_Window->OnRender();
+#ifdef YU_DEBUG
 			m_Editor->OnRender();
+#endif
+#ifdef YU_RELEASE
+			m_Window->OnRender();
+#endif
 
 			// Swap buffers
+#ifdef YU_DEBUG
+			m_Editor->m_MainWindow->SwapBuffers();
+#endif
+#ifdef YU_RELEASE
 			m_Window->SwapBuffers();
+#endif
 
 			// Calculate time of 1 frame
 			Time::CalculateDeltaTime();

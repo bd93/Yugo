@@ -33,19 +33,23 @@ namespace Yugo
 	static bool s_BoundSizingSnap = false;
 
 	Editor::Editor()
+		: m_MainWindow(uPtrCreate<Window>("Editor", 1200, 800)),
+		m_GameWindow(nullptr),
+		m_Scene(sPtrCreate<Scene>()),
+		m_ScriptEngine(uPtrCreate<ScriptEngine>()),
+		m_SelectedSceneEntity(entt::null)
 	{
 		m_SceneInfo.SceneName = "Default";
 		m_SceneInfo.SceneFilePath = "None";
-		m_SceneInfo.SceneWidth = 1200;
-		m_SceneInfo.SceneHeight = 800;
-		m_Scene = sPtrCreate<Scene>();
-		m_UserInterface = sPtrCreate<UserInterface>(m_Scene);
-		m_ScriptEngine = uPtrCreate<ScriptEngine>();
-		m_SelectedSceneEntity = entt::null;
+		m_SceneInfo.SceneWidth = m_MainWindow->m_Width;
+		m_SceneInfo.SceneHeight = m_MainWindow->m_Height;
 	}
 
 	void Editor::OnStart()
 	{
+		m_MainWindow->OnStart();
+		UserInput::SetGLFWwindow(m_MainWindow->m_GLFWwindow);
+
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -63,14 +67,13 @@ namespace Yugo
 			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
 		}
 		// Setup Platform/Renderer bindings
-		ImGui_ImplGlfw_InitForOpenGL(Window::GetGLFWwindow(), true);
+		ImGui_ImplGlfw_InitForOpenGL(m_MainWindow->m_GLFWwindow, true);
 		ImGui_ImplOpenGL3_Init("#version 330");
 
 		// Initially create texture framebuffer with default size (1200x800)
 		CreateFrameBuffer(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 
 		m_Scene->OnStart();
-		m_UserInterface->OnStart();
 		m_ScriptEngine->SetScene(m_Scene.get()); // TODO: Think about better solution!
 
 		Dispatcher::Subscribe<MouseButtonPress>(this);
@@ -210,7 +213,9 @@ namespace Yugo
 
 		// Render Scene
 		m_FrameBuffer->Bind();
+
 		m_Scene->OnRender();
+
 		if (s_RenderBoundingBox)
 		{
 			auto view = m_Scene->m_Registry.view<MeshComponent, BoundBoxComponent, TransformComponent>();
@@ -233,15 +238,17 @@ namespace Yugo
 				}
 			}
 		}
-		if (s_RenderUI || s_PlayMode)
-			m_UserInterface->OnRender();
+
+		if (s_RenderUI)
+			m_Scene->m_UserInterface->OnRender();
+
 		m_FrameBuffer->Unbind();
 
 		// Render ImGui
 		ImGuiIO& io = ImGui::GetIO();
 		int glfwWindowWidth;
 		int glfwWindowHeight;
-		glfwGetWindowSize(Window::GetGLFWwindow(), &glfwWindowWidth, &glfwWindowHeight);
+		glfwGetWindowSize(m_MainWindow->m_GLFWwindow, &glfwWindowWidth, &glfwWindowHeight);
 		io.DisplaySize = ImVec2((float)glfwWindowWidth, (float)glfwWindowHeight);
 
 		ImGui::Render();
@@ -272,7 +279,6 @@ namespace Yugo
 			// The order of update is important! If scene is updated first, then script can't execute entity movement
 			m_ScriptEngine->OnUpdate(ts);
 			m_Scene->OnUpdate(ts);
-			m_UserInterface->OnUpdate(ts);
 		}
 		else
 		{
@@ -299,34 +305,24 @@ namespace Yugo
 		}
 
 		if (s_RenderUI)
-			m_UserInterface->OnUpdate(ts);
+			m_Scene->m_UserInterface->OnUpdate(ts);
 	}
 
 	void Editor::OnEvent(const Event& event)
 	{
 		if (s_PlayMode)
 		{
-			if (event.GetEventType() == EventType::MouseButtonPress)
-			{
-				const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
-				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
-				for (auto entity : view)
-				{
-					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
-					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL) && m_IsSceneWindowHovered) // TODO: fix this situation where specific keys needs to be negated!
-						MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
-				}
-			}
 			m_ScriptEngine->OnEvent(event);
 		}
 		else
 		{
+			// Cast mouse ray, Select entity, reset mouse position offset for camera
 			if (event.GetEventType() == EventType::MouseButtonPress)
 			{
 				const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
-				if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT && m_IsSceneWindowHovered)
+				if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
 				{
-					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && !UserInput::IsKeyboardKeyPressed(KEY_LEFT_CONTROL)) // TODO: fix this situation where specific keys needs to be negated!
+					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && m_IsSceneWindowHovered)
 					{
 						auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
 						for (auto entity : view)
@@ -336,6 +332,7 @@ namespace Yugo
 							{
 								MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 								SelectMesh();
+								Camera::ResetMousePositionOffset(camera);
 							}
 						}
 					}
@@ -362,12 +359,25 @@ namespace Yugo
 				ImportAsset(importAssetFilePath);
 			}
 
-			//if (event.GetEventType() == EventType::MouseScroll && m_IsSceneWindowHovered)
-			//{
-			//	m_Scene->OnEvent(event);
-			//}
-			if (m_IsSceneWindowHovered)
-				m_Scene->OnEvent(event); // TODO: Check better solution! Should scene be subscribed to events?
+			// Camera zoom in / zoom out
+			if (event.GetEventType() == EventType::MouseScroll)
+			{
+				if (m_IsSceneWindowHovered)
+				{
+					const auto& mouseScroll = static_cast<const MouseScroll&>(event);
+
+					auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+					for (auto entity : view)
+					{
+						auto& tag = view.get<EntityTagComponent>(entity);
+						if (tag.Name == "Main Camera")
+						{
+							auto& camera = view.get<CameraComponent>(entity);
+							Camera::Scroll(mouseScroll.GetOffsetY(), camera);
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -378,8 +388,9 @@ namespace Yugo
 		ImGui::DestroyContext();
 
 		m_ScriptEngine->OnShutdown();
-		m_UserInterface->OnShutdown();
 		m_Scene->OnShutdown();
+		m_MainWindow->OnShutdown();
+		Window::TerminateGLFW();
 	}
 
 	void Editor::ShowProjectWindow()

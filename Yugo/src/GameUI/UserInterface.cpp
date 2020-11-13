@@ -1,4 +1,6 @@
 #include "pch.h"
+#include "Core/Dispatcher.h"
+#include "Components.h"
 #include "UserInterface.h"
 #include "Core/FileSystem.h"
 #include "Scene/Components.h"
@@ -6,6 +8,7 @@
 #include "Renderer/SpriteRenderer.h"
 #include "Renderer/TextRenderer.h"
 #include "Widget.h"
+#include "Scene/Scene.h"
 
 
 namespace Yugo
@@ -14,7 +17,7 @@ namespace Yugo
 	//using TraverseUpdateFun = std::function<void(entt::entity, TransformComponent&)>;
 	//using TraverseRenderFun = std::function<void(entt::entity)>;
 
-	UserInterface::UserInterface(sPtr<Scene>& scene)
+	UserInterface::UserInterface(Scene* scene)
 		: m_Scene(scene)
 	{
 		//m_Camera = sPtrCreate<Camera>(glm::vec3(100.0f, 100.0f, 100.0f));

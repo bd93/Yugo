@@ -60,7 +60,7 @@ namespace Yugo
 		s_Line.VertexArray->Unbind();
 	}
 
-	void Renderer2D::Init()
+	void Renderer2D::OnStart()
 	{
 		Shader quadShader(
 			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\vertex2d.shader",

@@ -7,13 +7,11 @@ namespace Yugo
 {
 
 	ScriptEngine::ScriptEngine()
+		: m_Scene(nullptr),
+		m_GameObjectInterfaceImpl(nullptr),
+		m_PlaneInterfaceImpl(nullptr),
+		m_InputInterfaceImpl(nullptr)
 	{
-#ifdef YU_RELEASE
-		Dispatcher::Subscribe<KeyboardKeyPress>(this);
-		Dispatcher::Subscribe<MouseButtonPress>(this);
-		Dispatcher::Subscribe<MouseScroll>(this);
-		Dispatcher::Subscribe<ImportAssetEvent>(this);
-#endif
 	}
 
 	/**
@@ -25,6 +23,13 @@ namespace Yugo
 	 */
 	void Yugo::ScriptEngine::OnStart()
 	{
+#ifdef YU_RELEASE
+		Dispatcher::Subscribe<KeyboardKeyPress>(this);
+		Dispatcher::Subscribe<MouseButtonPress>(this);
+		Dispatcher::Subscribe<MouseScroll>(this);
+		Dispatcher::Subscribe<ImportAssetEvent>(this);
+#endif
+
 		m_Lib = LoadLibrary(L"GameLogic.dll");
 		if (m_Lib == NULL)
 			std::cout << "Cannot dynamically load GameLogic.dll!\n";

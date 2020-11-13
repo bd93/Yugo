@@ -16,19 +16,24 @@ namespace Yugo
 	public:
 		Application();
 		~Application();
+
 		void Run();
 
 	private:
+
+#ifdef YU_RELEASE
 		uPtr<Window> m_Window;
-		uPtr<Window> m_SecondWindow;
+		uPtr<ScriptEngine> m_ScriptEngine
+#endif
+#ifdef YU_DEBUG
 		uPtr<Editor> m_Editor;
-		//ScriptEngine* m_ScriptEngine;
-		//Scene* m_Scene;
+#endif
 		
 		void OnStart();
 		void OnShutdown();
 	
 		void InitOpenGL();
+		void InitGLFW();
 	};
 
 

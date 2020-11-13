@@ -16,6 +16,9 @@ namespace Yugo
 
 	class Window
 	{
+		friend class Editor;
+		friend class Application;
+
 	public:
 		Window(const std::string& windowName, int width, int height);
 
@@ -27,17 +30,21 @@ namespace Yugo
 
 		bool WindowShouldClose();
 		void SwapBuffers();
-		void PollEvents();
+		void CreateGLFWwindow();
 
-		static GLFWwindow* GetGLFWwindow(); // TODO: Check if there is better solution
+		static void PollEvents();
+		static void MakeContextCurrent(GLFWwindow* glfwWindow);
+		static void TerminateGLFW();
 
 	private:
-		static GLFWwindow* s_GLFWwindow;
+#ifdef YU_RELEASE
+		sPtr<Scene> m_Scene;
+#endif
+		GLFWwindow* m_GLFWwindow;
 		std::string m_WindowName;
 		int m_Width;
 		int m_Height;
 		
-		void InitGLFW();
 		void SetEventCallbacks();
 	};
 

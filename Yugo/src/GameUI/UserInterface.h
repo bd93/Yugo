@@ -1,13 +1,13 @@
 #pragma once
 #include "Events/Event.h"
-#include "Scene/Scene.h"
-#include "Core/Dispatcher.h"
-#include "Components.h"
+#include "Core/Core.h"
 
+#include <entt/entt.hpp>
 
 namespace Yugo
 {
 
+	class Scene;
 	class Widget;
 
 	class UserInterface
@@ -16,7 +16,7 @@ namespace Yugo
 		friend class Editor; // World editor UI
 
 	public:
-		UserInterface(sPtr<Scene>& scene);
+		UserInterface(Scene* scene);
 
 		void OnStart();
 		void OnEvent(const Event& event);
@@ -30,7 +30,7 @@ namespace Yugo
 		Widget CreateWidget(const std::string& name = "");
 
 	private:
-		sPtr<Scene> m_Scene; // TEMPORARY!
+		Scene* m_Scene;
 		//sPtr<Camera> m_Camera;
 		entt::registry m_Registry;
 	};

@@ -5,8 +5,6 @@
 namespace Yugo
 {
 
-	//static sPtr<Camera> s_Camera;
-
 	void SpriteRenderer::Submit(SpriteComponent& sprite)
 	{
 		auto& vertexArray = sPtrCreate<VertexArray<Vertex1P1T>>();
@@ -51,11 +49,6 @@ namespace Yugo
 
 		DisableBlend();
 	}
-
-	//void SpriteRenderer::SetCamera(const sPtr<Camera>& camera)
-	//{
-	//	s_Camera = camera;
-	//}
 
 	void SpriteRenderer::EnableBlend()
 	{
