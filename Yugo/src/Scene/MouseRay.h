@@ -11,11 +11,20 @@ namespace Yugo
 	class MouseRay
 	{
 	public:
-		static void CalculateRayOrigin(const CameraComponent& camera, float mousePosX, float mousePosY, int sceneWidth, int sceneHeight);
-		static bool CheckCollisionWithPlane(const glm::vec3& planeNormal = glm::vec3(0.0f, 1.0f, 0.0f), float distanceToCoordOrigin = 0.0f);
-		static bool CheckCollisionWithBox(const MeshComponent& mesh, const TransformComponent& transform);
-		static bool CheckCollisionWithMesh(const MeshComponent& mesh, const TransformComponent& transform); // Check if ray intersects any triangle in mesh
-		static bool CheckCollisionWithSprite(const TransformComponent& transform);
+		struct RayInfo
+		{
+			glm::vec3 MouseRayOrigin;
+			glm::vec3 MouseRayDirection;
+			glm::vec3 MouseEyeSpaceCoords;
+			float MouseRayCollisionDistance;
+		};
+
+	public:
+		static void CalculateRayOrigin(const CameraComponent& camera, float mousePosX, float mousePosY, int sceneWidth, int sceneHeight, RayInfo* info = nullptr);
+		static bool CheckCollisionWithPlane(const glm::vec3& planeNormal = glm::vec3(0.0f, 1.0f, 0.0f), float distanceToCoordOrigin = 0.0f, RayInfo* info = nullptr);
+		static bool CheckCollisionWithBox(const MeshComponent& mesh, const TransformComponent& transform, RayInfo* info = nullptr);
+		static bool CheckCollisionWithMesh(const MeshComponent& mesh, const TransformComponent& transform, RayInfo* info = nullptr); // Check if ray intersects any triangle in mesh
+		static bool CheckCollisionWithSprite(const TransformComponent& transform, RayInfo* info = nullptr);
 		static glm::vec3 GetIntersectionPoint();
 		static float GetCollisionDistance();
 

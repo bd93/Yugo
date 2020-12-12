@@ -83,6 +83,8 @@ namespace Yugo
 		void Bind();
 		void Unbind();
 		void Attach(uint32_t bufferId, AttachmentType type);
+		void AttachMultisampled(uint32_t bufferId, AttachmentType type);
+		void BlitMultisampled(int width, int height, uint32_t bufferId, uint32_t intermediateBufferId);
 	};
 
 
@@ -98,7 +100,9 @@ namespace Yugo
 		void Bind();
 		void Unbind();
 		void Storage(int width, int height);
+		void Storage(int width, int height, int numOfSamples);
 		void Resize(int width, int height);
+		void ResizeMultisampled(int width, int height, int numOfSamples);
 	};
 
 }

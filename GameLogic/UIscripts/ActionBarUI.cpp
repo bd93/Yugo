@@ -42,6 +42,6 @@ namespace GameLogic
 	{
 	}
 
-	REGISTER_CLASS(ActionBarUI, __FILE__)
+	//REGISTER_CLASS(ActionBarUI, __FILE__)
 
 }

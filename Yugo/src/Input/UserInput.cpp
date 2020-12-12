@@ -36,8 +36,14 @@ namespace Yugo
 	{
 		double mousePosX, mousePosY;
 		glfwGetCursorPos(s_GLFWwindow, &mousePosX, &mousePosY);
-
 		return { (float)mousePosX, (float)mousePosY };
+	}
+
+	std::pair<int, int> UserInput::GetScreenDimension()
+	{
+		int screenWidth, screenHeight;
+		glfwGetFramebufferSize(s_GLFWwindow, &screenWidth, &screenHeight);
+		return { screenWidth, screenHeight };
 	}
 
 	void UserInput::SetGLFWwindow(GLFWwindow* glfwWindow)

@@ -7,9 +7,9 @@ namespace Yugo
 
 	void SpriteRenderer::Submit(SpriteComponent& sprite)
 	{
-		auto& vertexArray = sPtrCreate<VertexArray<Vertex1P1T>>();
-		auto& vertexBuffer = sPtrCreate<Buffer<Vertex1P1T>>();
-		auto& indexBuffer = sPtrCreate<Buffer<uint32_t>>();
+		auto vertexArray = sPtrCreate<VertexArray<Vertex1P1T>>();
+		auto vertexBuffer = sPtrCreate<Buffer<Vertex1P1T>>();
+		auto indexBuffer = sPtrCreate<Buffer<uint32_t>>();
 
 		vertexArray->Bind();
 		vertexBuffer->Bind();
@@ -28,7 +28,8 @@ namespace Yugo
 
 	void SpriteRenderer::Render(const SpriteComponent& sprite, const TransformComponent& transform, const CameraComponent& camera, const Shader& shader)
 	{
-		EnableBlend();
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		shader.Use();
 
@@ -47,39 +48,31 @@ namespace Yugo
 		//glDrawArrays(GL_TRIANGLES, 0, sprite.Vertices.size());
 		sprite.ArrayOfVertices->Unbind();
 
-		DisableBlend();
-	}
-
-	void SpriteRenderer::EnableBlend()
-	{
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	}
-
-	void SpriteRenderer::DisableBlend()
-	{
 		glDisable(GL_BLEND);
 	}
 
-	void SpriteRenderer::EnableDepthTest()
+	void SpriteRenderer::RenderInstanced(const SpriteComponent& sprite, size_t numOfInstances, const CameraComponent& camera, const Shader& shader)
 	{
-		glEnable(GL_DEPTH_TEST);
-	}
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	void SpriteRenderer::DisableDepthTest()
-	{
-		glDisable(GL_DEPTH_TEST);
-	}
+		shader.Use();
 
-	void SpriteRenderer::ClearColorBuffer(float r, float g, float b)
-	{
-		glClearColor(r, g, b, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-	}
+		auto& projectionMat = camera.Projection;
+		auto& viewMat = camera.View;
 
-	void SpriteRenderer::ClearDepthBuffer()
-	{
-		glClear(GL_DEPTH_BUFFER_BIT);
+		shader.SetMat4("projection", projectionMat);
+		shader.SetMat4("view", viewMat);
+		shader.SetVec4("color", sprite.Color);
+		shader.SetInt("texture1", 0); // temp
+		glActiveTexture(GL_TEXTURE0);
+		sprite.Texture.Bind();
+
+		sprite.ArrayOfVertices->Bind();
+		glDrawElementsInstanced(GL_TRIANGLES, sprite.Indices.size(), GL_UNSIGNED_INT, 0, numOfInstances);
+		sprite.ArrayOfVertices->Unbind();
+
+		glDisable(GL_BLEND);
 	}
 
 }

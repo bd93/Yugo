@@ -17,6 +17,7 @@ namespace Yugo
 		static bool IsMouseButtonPressed(MouseCode button);
 		//static bool IsMouseHoveringRect(TransformComponent& transform, const glm::vec2& mousePos);
 		static std::pair<float, float> GetMousePosition();
+		static std::pair<int, int> GetScreenDimension();
 
 		static void SetGLFWwindow(GLFWwindow* glfwWindow);
 

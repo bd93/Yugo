@@ -10,7 +10,7 @@ namespace Yugo
 	glm::vec3 MouseRay::s_MouseEyeSpaceCoords = glm::vec3(0.0f, 0.0f, 0.0f);
 	float MouseRay::s_MouseRayCollisionDistance = 0.0f;
 
-	void MouseRay::CalculateRayOrigin(const CameraComponent& camera, float mousePosX, float mousePosY, int sceneWidth, int sceneHeight)
+	void MouseRay::CalculateRayOrigin(const CameraComponent& camera, float mousePosX, float mousePosY, int sceneWidth, int sceneHeight, RayInfo* info)
 	{
 		const auto& projection = camera.Projection;
 		const auto& view = camera.View;
@@ -29,16 +29,22 @@ namespace Yugo
 		glm::vec4 worldCoords = glm::inverse(view) * eyeCoords;
 
 		s_MouseEyeSpaceCoords = glm::vec3(eyeCoords.x, eyeCoords.y, 0.0f); // Only for UI widgets purpose
-
 		s_MouseRayOrigin = glm::vec3(worldCoords.x, worldCoords.y, worldCoords.z);
 		s_MouseRayDirection = camera.Direction;
+
+		if (info != nullptr)
+		{
+			info->MouseRayOrigin = glm::vec3(worldCoords.x, worldCoords.y, worldCoords.z);
+			info->MouseRayDirection = camera.Direction;
+			info->MouseEyeSpaceCoords = glm::vec3(eyeCoords.x, eyeCoords.y, 0.0f);
+		}
 	}
 
 	/*
 	Algorithm can be found here: 
 	https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection
 	*/
-	bool MouseRay::CheckCollisionWithPlane(const glm::vec3& planeNormal, float distanceToCoordOrigin)
+	bool MouseRay::CheckCollisionWithPlane(const glm::vec3& planeNormal, float distanceToCoordOrigin, RayInfo* info)
 	{
 		//glm::vec3 faceNormal = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -49,7 +55,11 @@ namespace Yugo
 		float t = (distanceToCoordOrigin - glm::dot(planeNormal, s_MouseRayOrigin)) / glm::dot(planeNormal, s_MouseRayDirection);
 		if (t <= 1e-4f)
 			return false;
+
 		s_MouseRayCollisionDistance = t;
+		if (info != nullptr)
+			info->MouseRayCollisionDistance = t;
+
 		return true;
 	}
 
@@ -57,7 +67,7 @@ namespace Yugo
 	Algorithm can be found here: 
 	https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection
 	*/
-	bool MouseRay::CheckCollisionWithBox(const MeshComponent& mesh, const TransformComponent& transform)
+	bool MouseRay::CheckCollisionWithBox(const MeshComponent& mesh, const TransformComponent& transform, RayInfo* info)
 	{
 		const glm::mat4& model = transform.ModelMatrix;
 
@@ -92,6 +102,8 @@ namespace Yugo
 		t = tmin;
 
 		s_MouseRayCollisionDistance = t;
+		if (info != nullptr)
+			info->MouseRayCollisionDistance = t;
 
 		return true;
 	}
@@ -100,7 +112,7 @@ namespace Yugo
 	Algorithm can be found here: 
 	https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/ray-triangle-intersection-geometric-solution
 	*/
-	bool MouseRay::CheckCollisionWithMesh(const MeshComponent& mesh, const TransformComponent& transform)
+	bool MouseRay::CheckCollisionWithMesh(const MeshComponent& mesh, const TransformComponent& transform, RayInfo* info)
 	{
 		const glm::mat4& model = transform.ModelMatrix;
 
@@ -167,13 +179,16 @@ namespace Yugo
 				c = glm::cross(edge2,vp2);
 				if (glm::dot(n, c) < 0) continue; // P is on the right side; 
 
+				if (info != nullptr)
+					info->MouseRayCollisionDistance = t;
+
 				return true; // This ray hits the triangle 
 			}
 		}
 		return false;
 	}
 
-	bool MouseRay::CheckCollisionWithSprite(const TransformComponent& transform)
+	bool MouseRay::CheckCollisionWithSprite(const TransformComponent& transform, RayInfo* info)
 	{
 		float spritePosX = transform.Position.x;
 		float spritePosY = transform.Position.y;

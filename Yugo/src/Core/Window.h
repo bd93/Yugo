@@ -6,13 +6,14 @@
 #include "Dispatcher.h"
 #include "Renderer/Renderer2D.h"
 #include "ResourceManager.h"
-#include "Scene/Scene.h"
 
 #include <entt/entt.hpp>
 #include <string>
 
 namespace Yugo
 {
+
+	class Scene;
 
 	class Window
 	{
@@ -30,22 +31,27 @@ namespace Yugo
 
 		bool WindowShouldClose();
 		void SwapBuffers();
-		void CreateGLFWwindow();
+		void CreateGLFWwindow(GLFWmonitor* monitor, GLFWwindow* share);
+		void ShowWindow();
 
+		static void InitGLFW();
+		static void Hint(int hint, int value);
 		static void PollEvents();
 		static void MakeContextCurrent(GLFWwindow* glfwWindow);
 		static void TerminateGLFW();
+		
+		glm::vec4 m_Color;
 
 	private:
-#ifdef YU_RELEASE
 		sPtr<Scene> m_Scene;
-#endif
+
 		GLFWwindow* m_GLFWwindow;
 		std::string m_WindowName;
 		int m_Width;
 		int m_Height;
 		
 		void SetEventCallbacks();
+		void RemoveEventCallbacks();
 	};
 
 }

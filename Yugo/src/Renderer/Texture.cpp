@@ -9,7 +9,7 @@ namespace Yugo
 	void Texture::Create(const std::string& fullPath)
 	{
 		glGenTextures(1, &m_TextureID);
-		this->Bind();
+		Bind();
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -49,8 +49,7 @@ namespace Yugo
 			std::cout << "ERROR::TEXTURE::FAILED_TO_LOAD_TEXTURE/n";
 		}
 
-		// Unbind texture
-		this->Unbind();
+		Unbind();
 
 		stbi_image_free(data);
 	}
@@ -59,18 +58,18 @@ namespace Yugo
 		: m_FileName(fileName), m_Type(type)
 	{
 		std::string fullPath = directory + "\\" + fileName;
-		this->Create(fullPath);
+		Create(fullPath);
 	}
 
 	Texture::Texture(const std::string& textureFilePath, const std::string& type)
 		: m_Type(type)
 	{
-		this->Create(textureFilePath);
+		Create(textureFilePath);
 	}
 
 	Texture::Texture(const std::string& textureFilePath)
 	{
-		this->Create(textureFilePath);
+		Create(textureFilePath);
 	}
 
 	// Texture for Frame Buffer
@@ -79,7 +78,7 @@ namespace Yugo
 		// By default create Texture Buffer with NULL data
 		// Usefull for Frame Buffer texture attachment
 		glGenTextures(1, &m_TextureID);
-		this->Bind();
+		Bind();
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -91,8 +90,15 @@ namespace Yugo
 		*/
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-		// Unbind texture
-		this->Unbind();
+		Unbind();
+	}
+
+	Texture::Texture(unsigned int width, unsigned int height, int numOfSamples)
+	{
+		glGenTextures(1, &m_TextureID);
+		BindMultisampled();
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numOfSamples, GL_RGB, width, height, GL_TRUE);
+		UnbindMultisampled();
 	}
 
 	const unsigned int Texture::GetId() const
@@ -115,16 +121,33 @@ namespace Yugo
 		glBindTexture(GL_TEXTURE_2D, m_TextureID);
 	}
 
+	void Texture::BindMultisampled() const
+	{
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, m_TextureID);
+	}
+
 	void Texture::Unbind() const
 	{
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 
+	void Texture::UnbindMultisampled() const
+	{
+		glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+	}
+
 	void Texture::Resize(int width, int height)
 	{
-		this->Bind();
+		Bind();
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-		this->Unbind();
+		Unbind();
+	}
+
+	void Texture::ResizeMultisampled(int width, int height, int numOfSamples)
+	{
+		BindMultisampled();
+		glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, numOfSamples, GL_RGB, width, height, GL_TRUE);
+		UnbindMultisampled();
 	}
 
 }

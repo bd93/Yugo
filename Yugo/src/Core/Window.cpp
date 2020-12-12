@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Window.h"
+#include "GameUI/UserInterface.h" // If I delete this import, then compiler throw error because of undefined type (forward declaration in Scene.h)
+#include "Scene/Scene.h"
 
 #include <iostream>
 
@@ -13,11 +15,9 @@ namespace Yugo
 		: m_GLFWwindow(nullptr),
 		m_WindowName(windowName),
 		m_Width(width),
-		m_Height(height)
+		m_Height(height),
+		m_Scene(sPtrCreate<Scene>())
 	{
-#ifdef YU_RELEASE
-		m_Scene = sPtrCreate<Scene>();
-#endif
 	}
 
 	void Window::OnStart()
@@ -74,6 +74,16 @@ namespace Yugo
 		glfwSwapBuffers(m_GLFWwindow);
 	}
 
+	void Window::InitGLFW()
+	{
+		glfwInit();
+	}
+
+	void Window::Hint(int hint, int value)
+	{
+		glfwWindowHint(hint, value);
+	}
+
 	void Window::PollEvents()
 	{
 		glfwPollEvents();
@@ -89,15 +99,24 @@ namespace Yugo
 		glfwTerminate();
 	}
 
-	void Window::CreateGLFWwindow()
+	void Window::CreateGLFWwindow(GLFWmonitor* monitor, GLFWwindow* share)
 	{
-		m_GLFWwindow = glfwCreateWindow(m_Width, m_Height, m_WindowName.c_str(), NULL, NULL);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+		m_GLFWwindow = glfwCreateWindow(m_Width, m_Height, m_WindowName.c_str(), monitor, share);
 
 		if (m_GLFWwindow == NULL)
 		{
 			std::cout << "Failed to create GLFW window" << std::endl;
 			glfwTerminate();
 		}
+	}
+
+	void Window::ShowWindow()
+	{
+		glfwShowWindow(m_GLFWwindow);
 	}
 
 	void Window::SetEventCallbacks()
@@ -146,6 +165,17 @@ namespace Yugo
 				Dispatcher::Publish<MouseScroll>(scrollEvent);
 			}
 		);
+	}
+
+	void Window::RemoveEventCallbacks()
+	{
+		glfwSetFramebufferSizeCallback(m_GLFWwindow, NULL);
+
+		glfwSetKeyCallback(m_GLFWwindow, NULL);
+
+		glfwSetMouseButtonCallback(m_GLFWwindow, NULL);
+
+		glfwSetScrollCallback(m_GLFWwindow, NULL);
 	}
 
 }

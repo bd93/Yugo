@@ -155,4 +155,16 @@ namespace Yugo
 		camera.MouseOffset.OffsetY = 0.0f;
 	}
 
+	void Camera::UpdateProjectionMatrix(CameraComponent& camera, int screenWidth, int screenHeight)
+	{
+		camera.Projection = glm::ortho(
+			-(float)screenWidth / 2,
+			(float)screenWidth / 2,
+			-(float)screenHeight / 2,
+			(float)screenHeight / 2,
+			-2000.0f, // Near clipping plane
+			2000.0f   // Far clipping plane
+		);
+	}
+
 }

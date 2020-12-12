@@ -55,7 +55,8 @@ namespace Yugo
 
 		//SpriteRenderer::SetCamera(m_Camera);
 		//TextRenderer::SetCamera(m_Camera);
-		TextRenderer::Submit();
+
+		//TextRenderer::Submit();
 	}
 
 	void UserInterface::OnEvent(const Event& event)

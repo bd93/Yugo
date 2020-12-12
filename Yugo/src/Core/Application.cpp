@@ -24,8 +24,8 @@ namespace Yugo
 
 	void Application::OnStart()
 	{
-		InitGLFW();
-		m_Editor->m_MainWindow->CreateGLFWwindow();
+		Window::InitGLFW();
+		m_Editor->m_MainWindow->CreateGLFWwindow(NULL, NULL);
 		Window::MakeContextCurrent(m_Editor->m_MainWindow->m_GLFWwindow);
 		InitOpenGL();
 
@@ -38,8 +38,7 @@ namespace Yugo
 		m_ScriptEngine->SetScene(m_Window->m_Scene.get());
 		// TODO: set script engine OnStart, OnStop, AttachScript methods!
 #endif
-
-		Renderer2D::OnStart();
+		//Renderer2D::OnStart();
 		Time::OnStart();
 	}
 
@@ -61,14 +60,6 @@ namespace Yugo
 		}
 	}
 
-	void Application::InitGLFW()
-	{
-		glfwInit();
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	}
-
 	void Yugo::Application::Run()
 	{
 		OnStart();
@@ -76,7 +67,7 @@ namespace Yugo
 		// Game loop
 		while (!m_Editor->m_MainWindow->WindowShouldClose())
 		{
-			Window::PollEvents();
+			//Window::PollEvents();
 
 			// Update
 #ifdef YU_DEBUG
@@ -95,6 +86,7 @@ namespace Yugo
 			m_Window->OnRender();
 #endif
 
+			Window::PollEvents();
 			// Swap buffers
 #ifdef YU_DEBUG
 			m_Editor->m_MainWindow->SwapBuffers();

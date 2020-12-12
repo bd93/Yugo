@@ -6,22 +6,26 @@
 namespace Yugo
 {
 
+	/**
+	 * @brief Animated and non-animated mesh renderer.
+	 *
+	 * Methods are static and they pass components data to OpenGL rendering calls.
+	 */
 	class MeshRenderer
 	{
 	public:
-		// This static method creates vertex and index buffers and vertex arrays for Mesh (one buffer/vertex array per Submesh)
 		static void Submit(MeshComponent& mesh);
-		//static void Render(const MeshComponent& mesh, const TransformComponent& transform, const Shader& shader);
+		static void SubmitCopy(MeshComponent& mesh);
 		static void Render(const MeshComponent& mesh, const TransformComponent& transform, const CameraComponent& camera, const Shader& shader);
-		//static void SetCamera(const sPtr<Camera>& camera);
-		static void DrawAABB(const BoundBoxComponent& aabb, const TransformComponent& transform, const CameraComponent& camera, const Shader& shader); // For debug purpose
-		//static void DrawAABB(const BoundBoxComponent& aabb, const TransformComponent& transform, const Shader& shader); // For debug purpose
-		static void EnableBlend();
-		static void DisableBlend();
-		static void EnableDepthTest();
-		static void DisableDepthTest();
-		static void ClearColorBuffer(float r, float g, float b); // r = red, g = green, b = blue
-		static void ClearDepthBuffer();
+		static void DrawAABB(const BoundBoxComponent& aabb, const TransformComponent& transform, const CameraComponent& camera, const Shader& shader);
+
+		//static void EnableBlend();
+		//static void DisableBlend();
+		//static void EnableDepthTest();
+		//static void DisableDepthTest();
+		//static void ClearColor(float r, float g, float b); // r = red, g = green, b = blue
+		//static void ClearColorBuffer();
+		//static void ClearDepthBuffer();
 	};
 
 }

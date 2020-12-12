@@ -25,6 +25,8 @@ namespace Yugo
 		
 		static void RecalculateDirection(CameraComponent& camera);
 		static void ResetMousePositionOffset(CameraComponent& camera);
+
+		static void UpdateProjectionMatrix(CameraComponent& camera, int screenWidth, int screenHeight);
 	};
 
 }

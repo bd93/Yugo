@@ -50,6 +50,12 @@ namespace Yugo
 			);
 		ResourceManager::AddShader("animatedModelShader", animatedModelShader);
 
+		Shader instancedRendering(
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\instancedRenderingVertex.shader",
+			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\instancedRenderingFragment.shader"
+			);
+		ResourceManager::AddShader("instancedRendering", instancedRendering);
+
 		m_UserInterface->OnStart();
 
 		auto cameraEntity = CreateEntity();
@@ -58,6 +64,10 @@ namespace Yugo
 		auto& tag = cameraEntity.AddComponent<EntityTagComponent>();
 		tag.Name = "Main Camera";
 		Camera::OnStart(transform, camera);
+
+		m_Grid = sPtrCreate<Grid>(256, 50.0f, 2.2f);
+
+		glEnable(GL_DEPTH_TEST);
 	}
 
 	/**
@@ -69,6 +79,7 @@ namespace Yugo
      */
 	void Scene::OnEvent(const Event& event)
 	{
+		// TODO: Update new camera Projection matrix when WindowResize event occurs
 	}
 
 	/**
@@ -116,9 +127,6 @@ namespace Yugo
      */
 	void Scene::OnRender()
 	{
-		MeshRenderer::ClearColorBuffer(0.3f, 0.3f, 0.3f);
-		MeshRenderer::ClearDepthBuffer();
-
 		auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
 		for (auto entity : view)
 		{
@@ -126,9 +134,9 @@ namespace Yugo
 			if (tag.Name == "Main Camera")
 			{
 				auto& camera = view.get<CameraComponent>(entity);
-				Renderer2D::DrawGrid(camera, glm::vec3(0.0f, 0.0f, 0.0f), 100, glm::vec3(50.0f, 50.0f, 50.0f), glm::vec3(0.2f, 0.2f, 0.2f));
-
-				MeshRenderer::ClearDepthBuffer(); // TODO: Check how to fix this double call
+				//Renderer2D::DrawGrid(camera, glm::vec3(0.0f, 0.0f, 0.0f), 100, glm::vec3(50.0f, 50.0f, 50.0f), glm::vec3(0.2f, 0.2f, 0.2f));
+				m_Grid->Draw(camera, ResourceManager::GetShader("instancedRendering"));
+				//MeshRenderer::ClearDepthBuffer(); // TODO: Check how to fix this double call
 
 				// Render meshes with animations
 				{
@@ -155,7 +163,7 @@ namespace Yugo
 			}
 		}
 
-		m_UserInterface->OnRender();
+		//m_UserInterface->OnRender();
 	}
 
 	/**
@@ -239,16 +247,16 @@ namespace Yugo
 	}
 
 	/**
-     * @brief Creates custom Entity object plus entity in registry.
-     *
-     * Entity object is useful because it's more intuitive to call 
+	 * @brief Creates custom Entity object plus entity in registry.
+	 *
+	 * Entity object is useful because it's more intuitive to call
 	 * entityObject.GetComponent<ComponentType>() rather than m_Scene->m_Registry.get<ComponentType>(nativeEnttEntity).
 	 *
 	 * @param name Name of the entity which will be in EntityTagComponent.
-     */
+	 */
 	Entity Scene::CreateEntity(const std::string& name)
 	{
-		Entity entity = {m_Registry.create(), name, this };
+		Entity entity = { m_Registry.create(), name, this };
 		return entity;
 	}
 

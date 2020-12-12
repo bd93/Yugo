@@ -2,6 +2,7 @@
 #include "Interfaces/ScriptInterface.h"
 #include "GameObject.h"
 #include "Plane.h"
+#include "MouseRay.h"
 #include "YugoComponents.h"
 #include "YugoEvents.h"
 #include "Macros.h"

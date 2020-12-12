@@ -24,6 +24,16 @@ namespace GameLogic
 		return s_InputInterface->IsMouseHoveringRect(transform);
 	}
 
+	std::pair<float, float> Input::GetMousePosition()
+	{
+		return s_InputInterface->GetMousePosition();
+	}
+
+	std::pair<int, int> Input::GetScreenDimension()
+	{
+		return s_InputInterface->GetScreenDimension();
+	}
+
 	void Input::SetInterface(InputInterface* inputInterface)
 	{
 		s_InputInterface = inputInterface;

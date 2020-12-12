@@ -33,7 +33,6 @@ namespace Yugo
 		void OnShutdown();
 	
 		void InitOpenGL();
-		void InitGLFW();
 	};
 
 

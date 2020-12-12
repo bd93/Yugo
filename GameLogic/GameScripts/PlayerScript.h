@@ -11,6 +11,7 @@ namespace GameLogic
 		std::vector<GameObject> m_Enemies;
 		GameObject m_Camera;
 		Plane m_Plane;
+		MouseRay m_MouseRay;
 		glm::vec3 m_MoveDestination;
 		glm::vec3 m_MoveDirection;
 		float m_Speed = 200.0f;
@@ -20,11 +21,8 @@ namespace GameLogic
 		PlayerScript();
 
 		void OnStart() override;
-
 		void OnUpdate(TimeStep ts) override;
-
 		void OnEvent(const Event& event) override;
-
 		void OnShutdown() override;
 
 		void Move(TimeStep ts);

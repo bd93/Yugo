@@ -21,7 +21,7 @@ namespace Yugo
 	 * Then it creates interface implementations and sets it in client scripts and game objects.
 	 * It also pushes interfaces and game objects to vectors in order to destroy them when OnStop method is called. 
 	 */
-	void Yugo::ScriptEngine::OnStart()
+	void Yugo::ScriptEngine::OnStart(Scene* scene)
 	{
 #ifdef YU_RELEASE
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
@@ -29,6 +29,8 @@ namespace Yugo
 		Dispatcher::Subscribe<MouseScroll>(this);
 		Dispatcher::Subscribe<ImportAssetEvent>(this);
 #endif
+
+		m_Scene = scene;
 
 		m_Lib = LoadLibrary(L"GameLogic.dll");
 		if (m_Lib == NULL)
@@ -60,6 +62,9 @@ namespace Yugo
 		SetInputInterface SetInputInterfaceImpl = (SetInputInterface)GetProcAddress(m_Lib, "SetInputInterface");
 		if (SetInputInterfaceImpl == NULL)
 			std::cout << "Cannot load SetInputInterface function!\n";
+		SetMouseRayInterface SetMouseRayInterfaceImpl = (SetMouseRayInterface)GetProcAddress(m_Lib, "SetMouseRayInterface");
+		if (SetMouseRayInterfaceImpl == NULL)
+			std::cout << "Cannot load SetMouseRayInterface function!\n";
 
 		m_ScriptArray = NewScripts();
 
@@ -92,6 +97,10 @@ namespace Yugo
 		InputInterfaceImpl* inputInterfaceImpl = new InputInterfaceImpl();
 		SetInputInterfaceImpl(inputInterfaceImpl);
 		m_InputInterfaceImpl = inputInterfaceImpl;
+
+		MouseRayInterfaceImpl* mouseRayInterfaceImpl = new MouseRayInterfaceImpl();
+		SetMouseRayInterfaceImpl(mouseRayInterfaceImpl);
+		m_MouseRayInterfaceImpl = mouseRayInterfaceImpl;
 
 		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
 			m_ScriptArray.Scripts[i]->OnStart();
@@ -137,6 +146,7 @@ namespace Yugo
 		delete m_PlaneInterfaceImpl;
 		delete m_InputInterfaceImpl;
 		delete m_GameObjectInterfaceImpl;
+		delete m_MouseRayInterfaceImpl;
 		//delete m_ScriptInterfaceImpl;
 
 		//m_ScriptInterfaceImpls.clear();
@@ -144,6 +154,7 @@ namespace Yugo
 		m_PlaneInterfaceImpl = nullptr;
 		m_InputInterfaceImpl = nullptr;
 		m_GameObjectInterfaceImpl = nullptr;
+		m_MouseRayInterfaceImpl = nullptr;
 		//m_ScriptInterfaceImpl = nullptr;
 
 		DeleteScripts DestroyScripts = (DeleteScripts)GetProcAddress(m_Lib, "DeleteScripts");

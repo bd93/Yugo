@@ -68,8 +68,10 @@ namespace Yugo
 		FrameBuffer will be used to display Scene inside Scene editor window
 		*/
 		sPtr<FrameBuffer> m_FrameBuffer;
+		sPtr<FrameBuffer> m_IntermediateFrameBuffer;
 		sPtr<RenderBuffer> m_RenderBuffer;
 		sPtr<Texture> m_Texture;
+		sPtr<Texture> m_IntermediateTexture;
 
 		void ShowProjectWindow();
 		void ShowInspectorWindow();
@@ -83,6 +85,7 @@ namespace Yugo
 		void CreateWidget(const std::string& name, entt::entity parent);
 		void CreateCanvasMatrixWidget(int dimensions[2], float padding[4], float cellWidgetSize[2], entt::entity parent);
 		void CreateCopyEntity(entt::entity node);
+		void CreateGameWindow();
 
 		void CreateFrameBuffer(int width, int height);
 		void BindFrameBuffer();

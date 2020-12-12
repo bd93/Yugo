@@ -7,6 +7,7 @@
 #include "GameObjectInterfaceImpl.h"
 #include "PlaneInterfaceImpl.h"
 #include "InputInterfaceImpl.h"
+#include "MouseRayInterfaceImpl.h"
 
 #include <Windows.h>
 
@@ -25,6 +26,7 @@ namespace Yugo
 	typedef void (*SetGameObjectInterface)(GameObjectInterfaceImpl*);
 	typedef void (*SetPlaneInterface)(PlaneInterfaceImpl*);
 	typedef void (*SetInputInterface)(InputInterfaceImpl*);
+	typedef void (*SetMouseRayInterface)(MouseRayInterfaceImpl*);
 	
 	class Editor;
 
@@ -49,7 +51,7 @@ namespace Yugo
 	public:
 		ScriptEngine();
 
-		void OnStart();
+		void OnStart(Scene* scene);
 		void OnUpdate(TimeStep ts);
 		void OnEvent(const Event& event);
 		void OnShutdown();
@@ -69,6 +71,7 @@ namespace Yugo
 		GameObjectInterfaceImpl* m_GameObjectInterfaceImpl;
 		PlaneInterfaceImpl* m_PlaneInterfaceImpl;
 		InputInterfaceImpl* m_InputInterfaceImpl;
+		MouseRayInterfaceImpl* m_MouseRayInterfaceImpl;
 		//ScriptInterfaceImpl* m_ScriptInterfaceImpl;
 	};
 }

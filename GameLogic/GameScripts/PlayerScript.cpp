@@ -35,6 +35,11 @@ namespace GameLogic
 
 		if (Input::IsMouseButtonPressed(MOUSE_BUTTON_RIGHT))
 		{
+			auto& cameraComponent = m_Camera.GetComponent<CameraComponent>();
+			m_MouseRay.CastRay(cameraComponent);
+			m_MouseRay.CheckCollisionWithPlane(glm::vec3(0.0f, 1.0f, 0.0f), 0.0f);
+			const auto& intersectionPoint = m_MouseRay.GetIntersectionPoint();
+
 			m_IsMoving = true;
 			m_MoveDestination = m_Plane.GetIntersectionPoint();
 			auto& transform = m_GameObject->GetComponent<TransformComponent>();
@@ -49,7 +54,8 @@ namespace GameLogic
 	{
 		if (event.GetEventType() == EventType::MouseButtonPress)
 		{
-			
+			//auto& cameraComponent = m_Camera.GetComponent<CameraComponent>();
+			//m_MouseRay.CastRay(cameraComponent);
 		}
 	}
 

@@ -27,7 +27,7 @@ namespace Yugo
 		~VertexArray();
 
 		void SetLayout(); // Set initial layout for specific Vertex type
-		void AddLayout(int NumOfComponents, size_t stride, size_t offset); // Add additional layout (e.g. from another buffer)
+		void AddLayout(int index, int NumOfComponents, size_t stride, size_t offset); // Add additional layout (e.g. from another buffer)
 		void SetDivisor(int vertexAttributeIndex, int divisor); // Set divisor, the number of instances that will pass between attribute update
 		void Bind();
 		void Unbind();
@@ -103,12 +103,12 @@ namespace Yugo
 	}
 
 	template<typename VertexType>
-	inline void VertexArray<VertexType>::AddLayout(int numOfComponents, size_t stride, size_t offset)
+	inline void VertexArray<VertexType>::AddLayout(int index, int numOfComponents, size_t stride, size_t offset)
 	{
-		static uint8_t index = m_VertexAttributes.size(); // Next (free) vertex attribute index
-		glVertexAttribPointer(index, numOfComponents, GL_FLOAT, GL_FALSE, stride, offset);
+		//static size_t index = m_VertexAttributes.size(); // Next (free) vertex attribute index
+		glVertexAttribPointer(index, numOfComponents, GL_FLOAT, GL_FALSE, stride, (void*)offset);
 		glEnableVertexAttribArray(index);
-		++index;
+		//++index;
 	}
 
 	template<typename VertexType>

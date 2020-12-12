@@ -11,6 +11,8 @@
 #include <ImGuizmo.h>
 #include <windows.h>
 #include <commdlg.h>
+#include <entt/core/type_info.hpp>
+
 
 namespace Yugo
 {
@@ -34,7 +36,7 @@ namespace Yugo
 
 	Editor::Editor()
 		: m_MainWindow(uPtrCreate<Window>("Editor", 1200, 800)),
-		m_GameWindow(nullptr),
+		m_GameWindow(uPtrCreate<Window>("Game", 1200, 800)),
 		m_Scene(sPtrCreate<Scene>()),
 		m_ScriptEngine(uPtrCreate<ScriptEngine>()),
 		m_SelectedSceneEntity(entt::null)
@@ -74,12 +76,13 @@ namespace Yugo
 		CreateFrameBuffer(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 
 		m_Scene->OnStart();
-		m_ScriptEngine->SetScene(m_Scene.get()); // TODO: Think about better solution!
+		//m_ScriptEngine->SetScene(m_GameWindow->m_Scene.get()); // TODO: Think about better solution!
 
 		Dispatcher::Subscribe<MouseButtonPress>(this);
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
 		Dispatcher::Subscribe<ImportAssetEvent>(this);
 		Dispatcher::Subscribe<MouseScroll>(this);
+		Dispatcher::Subscribe<WindowResize>(this);
 	}
 
 	void Editor::OnRender()
@@ -202,17 +205,48 @@ namespace Yugo
 		ImGui::End();
 
 		ShowSceneWindow(); // Show ImGuizmo widget on entity click (inside ShowSceneWindow()) goes first becuase it manipulates entity's model matrix
-		if (!s_PlayMode)
+		ShowHierarchyWindow();
+		ShowInspectorWindow();
+		ShowProjectWindow();
+		/*if (!s_PlayMode)
 		{
 			ShowHierarchyWindow();
 			ShowInspectorWindow();
 			ShowProjectWindow();
+		}*/
+
+		//ImGui::ShowDemoWindow();
+
+		if (s_PlayMode)
+		{
+			Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			//m_Scene->OnRender();
+			m_GameWindow->m_Scene->OnRender();
+			Window::PollEvents(); // temp
+			m_GameWindow->SwapBuffers();
+			
+			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
+			
+			if (m_GameWindow->WindowShouldClose())
+			{
+				s_PlayMode = false;
+				m_ScriptEngine->OnStop();
+				m_GameWindow->OnShutdown();
+				UserInput::SetGLFWwindow(m_MainWindow->m_GLFWwindow);
+				m_MainWindow->SetEventCallbacks();
+				m_GameWindow->RemoveEventCallbacks();
+			}
 		}
 
-		ImGui::ShowDemoWindow();
 
 		// Render Scene
 		m_FrameBuffer->Bind();
+		glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of framebuffer's texture inside scene imgui window
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		//glEnable(GL_DEPTH_TEST);
 
 		m_Scene->OnRender();
 
@@ -222,7 +256,7 @@ namespace Yugo
 			for (auto entity : view)
 			{
 				auto& [aabb, transform] = view.get<BoundBoxComponent, TransformComponent>(entity);
-				auto view =m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
 				for (auto entity : view)
 				{
 					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
@@ -239,10 +273,12 @@ namespace Yugo
 			}
 		}
 
-		if (s_RenderUI)
-			m_Scene->m_UserInterface->OnRender();
-
+		//if (s_RenderUI)
+		//	m_Scene->m_UserInterface->OnRender();
+		m_FrameBuffer->BlitMultisampled(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight, m_FrameBuffer->GetId(), m_IntermediateFrameBuffer->GetId()); // temp!
 		m_FrameBuffer->Unbind();
+
+		//ShowSceneWindow(); // temp
 
 		// Render ImGui
 		ImGuiIO& io = ImGui::GetIO();
@@ -258,7 +294,7 @@ namespace Yugo
 		This is needed because scene is being rendered on custom framebuffer's attached texture
 		and ImGUI is being renderd on default framebuffer
 		*/
-		glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+		glClearColor(0.2f, 0.2f, 0.2f, 1.0f); // Color of ImGui background (Main window)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -277,8 +313,10 @@ namespace Yugo
 		if (s_PlayMode)
 		{
 			// The order of update is important! If scene is updated first, then script can't execute entity movement
+			Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
 			m_ScriptEngine->OnUpdate(ts);
 			m_Scene->OnUpdate(ts);
+			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 		}
 		else
 		{
@@ -312,7 +350,25 @@ namespace Yugo
 	{
 		if (s_PlayMode)
 		{
+			Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
 			m_ScriptEngine->OnEvent(event);
+
+			if (event.GetEventType() == EventType::WindowResize)
+			{
+				// TODO: Check if Projection Matrix should be updated 
+				//const auto& windowResize = static_cast<const WindowResize&>(event);
+				//int screenWidth = windowResize.GetWidth();
+				//int screenHeight = windowResize.GetHeight();
+				//auto view = m_Scene->m_Registry.view<CameraComponent, TransformComponent, EntityTagComponent>();
+				//for (auto entity : view)
+				//{
+				//	auto& [camera, transform, tag] = view.get<CameraComponent, TransformComponent, EntityTagComponent>(entity);
+				//	if (tag.Name == "Main Camera")
+				//		Camera::UpdateProjectionMatrix(camera, screenWidth, screenHeight);
+				//}
+			}
+
+			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 		}
 		else
 		{
@@ -1034,7 +1090,8 @@ namespace Yugo
 		float yPadding = (ImGui::GetWindowSize().y + ImGui::GetItemRectSize().y - m_SceneInfo.SceneHeight) * 0.5f;
 
 		ImGui::SetCursorPos(ImVec2(xPadding, yPadding));
-		ImGui::Image((void*)m_Texture->GetId(), ImVec2((float)m_SceneInfo.SceneWidth, (float)m_SceneInfo.SceneHeight), ImVec2(0, 1), ImVec2(1, 0));
+		//ImGui::Image((void*)m_Texture->GetId(), ImVec2((float)m_SceneInfo.SceneWidth, (float)m_SceneInfo.SceneHeight), ImVec2(0, 1), ImVec2(1, 0));
+		ImGui::Image((void*)m_IntermediateTexture->GetId(), ImVec2((float)m_SceneInfo.SceneWidth, (float)m_SceneInfo.SceneHeight), ImVec2(0, 1), ImVec2(1, 0)); // temp
 		if (ImGui::BeginDragDropTarget())
 		{
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Import Asset"))
@@ -1099,13 +1156,16 @@ namespace Yugo
 		ImGui::End();
 
 		ImGui::Begin("Scene Commands");
-		
+
 		if (ImGui::Button("Play Scene"))
 		{
 			s_PlayMode = true;
 			if (m_SelectedSceneEntity != entt::null)
 				m_SelectedSceneEntity = entt::null;
-			m_ScriptEngine->OnStart();
+
+			CreateGameWindow();
+
+			m_ScriptEngine->OnStart(m_GameWindow->m_Scene.get());
 		}
 
 		ImGui::SameLine();
@@ -1114,6 +1174,8 @@ namespace Yugo
 		{
 			s_PlayMode = false;
 			m_ScriptEngine->OnStop();
+			m_GameWindow->OnShutdown();
+			UserInput::SetGLFWwindow(m_MainWindow->m_GLFWwindow);
 		}
 		
 		ImGui::End();
@@ -1630,19 +1692,90 @@ namespace Yugo
 		traverse(node, copyNode);
 	}
 
+	void Editor::CreateGameWindow()
+	{
+		Window::Hint(GLFW_DECORATED, true);
+		m_GameWindow->CreateGLFWwindow(NULL, m_MainWindow->m_GLFWwindow);
+
+		Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
+
+		glfwSetWindowAspectRatio(m_GameWindow->m_GLFWwindow, m_GameWindow->m_Width, m_GameWindow->m_Height);
+
+		m_GameWindow->SetEventCallbacks();
+		m_MainWindow->RemoveEventCallbacks();
+
+		UserInput::SetGLFWwindow(m_GameWindow->m_GLFWwindow);
+
+		m_GameWindow->ShowWindow();
+
+		auto& fromRegistry = m_Scene->m_Registry;
+		auto& toRegistry = m_GameWindow->m_Scene->m_Registry;
+		toRegistry.clear();
+
+		m_Scene->m_CloneFunctions[entt::type_hash<TransformComponent>::value()] = &Scene::CloneRegistry<TransformComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<RelationshipComponent>::value()] = &Scene::CloneRegistry<RelationshipComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<EntityTagComponent>::value()] = &Scene::CloneRegistry<EntityTagComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<BoundBoxComponent>::value()] = &Scene::CloneRegistry<BoundBoxComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<MeshComponent>::value()] = &Scene::CloneRegistry<MeshComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<SpriteComponent>::value()] = &Scene::CloneRegistry<SpriteComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<AnimationComponent>::value()] = &Scene::CloneRegistry<AnimationComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<CameraComponent>::value()] = &Scene::CloneRegistry<CameraComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<ScriptComponent>::value()] = &Scene::CloneRegistry<ScriptComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<TextWidgetComponent>::value()] = &Scene::CloneRegistry<TextWidgetComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<CanvasWidgetComponent>::value()] = &Scene::CloneRegistry<CanvasWidgetComponent>;
+		m_Scene->m_CloneFunctions[entt::type_hash<ButtonWidgetComponent>::value()] = &Scene::CloneRegistry<ButtonWidgetComponent>;
+
+		// Create entities with same id as entities in m_Scene
+		fromRegistry.each([&toRegistry](auto entity)
+			{
+				auto copyEntity = toRegistry.create(entity);
+			}
+		);
+
+		// Iterate over all components of m_Editor->m_Scene and copy components to m_GameWindow->m_Scene
+		m_Scene->m_Registry.visit([this, &fromRegistry, &toRegistry](const auto componentType)
+			{
+				m_Scene->m_CloneFunctions[componentType.hash()](fromRegistry, toRegistry);
+			}
+		);
+
+		auto view = m_GameWindow->m_Scene->GetView<MeshComponent>();
+		for (auto entity : view)
+		{
+			auto& mesh = view.get<MeshComponent>(entity);
+			MeshRenderer::SubmitCopy(mesh);
+		}
+
+		glEnable(GL_DEPTH_TEST);
+		glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of game window background
+
+		Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
+	}
+
 	void Editor::CreateFrameBuffer(int width, int height)
 	{
 		m_FrameBuffer = sPtrCreate<FrameBuffer>();
+		m_IntermediateFrameBuffer = sPtrCreate<FrameBuffer>();
 		m_RenderBuffer = sPtrCreate<RenderBuffer>();
-		m_Texture = sPtrCreate<Texture>(width, height);
+		//m_Texture = sPtrCreate<Texture>(width, height);
+		m_Texture = sPtrCreate<Texture>(width, height, 4); // temp
+		m_IntermediateTexture = sPtrCreate<Texture>(width, height);
 
 		m_FrameBuffer->Bind();
 		m_RenderBuffer->Bind();
-		m_RenderBuffer->Storage(width, height);
+		//m_RenderBuffer->Storage(width, height);
+		m_RenderBuffer->Storage(width, height, 4); // temp
 		m_RenderBuffer->Unbind();
-		m_FrameBuffer->Attach(m_Texture->GetId(), FrameBuffer::AttachmentType::TextureBuffer);
-		m_FrameBuffer->Attach(m_RenderBuffer->GetId(), FrameBuffer::AttachmentType::RenderBuffer);
+		m_FrameBuffer->AttachMultisampled(m_Texture->GetId(), FrameBuffer::AttachmentType::TextureBuffer); // temp
+		//m_FrameBuffer->Attach(m_Texture->GetId(), FrameBuffer::AttachmentType::TextureBuffer);
+		m_FrameBuffer->AttachMultisampled(m_RenderBuffer->GetId(), FrameBuffer::AttachmentType::RenderBuffer); // temp
+		//m_FrameBuffer->Attach(m_RenderBuffer->GetId(), FrameBuffer::AttachmentType::RenderBuffer);
 		m_FrameBuffer->Unbind();
+
+		// temp!
+		m_IntermediateFrameBuffer->Bind();
+		m_IntermediateFrameBuffer->Attach(m_IntermediateTexture->GetId(), FrameBuffer::AttachmentType::TextureBuffer);
+		m_IntermediateFrameBuffer->Unbind();
 	}
 
 	void Editor::BindFrameBuffer()
@@ -1756,8 +1889,11 @@ namespace Yugo
 			y = (1 / ratio) * x;
 		}
 
-		m_Texture->Resize((int)x, (int)y);
-		m_RenderBuffer->Resize((int)x, (int)y);
+		//m_Texture->Resize((int)x, (int)y);
+		m_Texture->ResizeMultisampled((int)x, (int)y, 4);
+		m_IntermediateTexture->Resize((int)x, (int)y);
+		m_RenderBuffer->ResizeMultisampled((int)x, (int)y, 4);
+		//m_RenderBuffer->Resize((int)x, (int)y);
 
 		glViewport(0, 0, (int)x, (int)y);
 

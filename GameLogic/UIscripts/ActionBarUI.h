@@ -15,9 +15,7 @@ namespace GameLogic
 		ActionBarUI();
 
 		void OnStart() override;
-
 		void OnUpdate(TimeStep ts) override;
-
 		void OnEvent(const Event& event) override;
 
 		void OnShutdown() override;
