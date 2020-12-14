@@ -12,8 +12,8 @@ namespace Yugo
 	{
 		SpriteRenderer::Submit(m_Quad);
 		
-		Texture smile{ FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Textures\\awesomeface.png" };
-		Texture chess{ FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Textures\\chess.jpg" };
+		//Texture smile{ FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Textures\\awesomeface.png" };
+		//Texture chess{ FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Textures\\chess.jpg" };
 		Texture quad{ FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Textures\\quad.png" };
 		m_Quad.Texture = quad;
 

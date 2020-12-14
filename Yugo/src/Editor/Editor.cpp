@@ -208,12 +208,6 @@ namespace Yugo
 		ShowHierarchyWindow();
 		ShowInspectorWindow();
 		ShowProjectWindow();
-		/*if (!s_PlayMode)
-		{
-			ShowHierarchyWindow();
-			ShowInspectorWindow();
-			ShowProjectWindow();
-		}*/
 
 		//ImGui::ShowDemoWindow();
 
@@ -273,8 +267,8 @@ namespace Yugo
 			}
 		}
 
-		//if (s_RenderUI)
-		//	m_Scene->m_UserInterface->OnRender();
+		if (s_RenderUI)
+			m_Scene->m_UserInterface->OnRender();
 		m_FrameBuffer->BlitMultisampled(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight, m_FrameBuffer->GetId(), m_IntermediateFrameBuffer->GetId()); // temp!
 		m_FrameBuffer->Unbind();
 

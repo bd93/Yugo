@@ -65,7 +65,7 @@ namespace Yugo
 		tag.Name = "Main Camera";
 		Camera::OnStart(transform, camera);
 
-		m_Grid = sPtrCreate<Grid>(256, 50.0f, 2.2f);
+		m_Grid = sPtrCreate<Grid>(65536, 50.0f, 2.2f);
 
 		glEnable(GL_DEPTH_TEST);
 	}
@@ -134,9 +134,13 @@ namespace Yugo
 			if (tag.Name == "Main Camera")
 			{
 				auto& camera = view.get<CameraComponent>(entity);
-				//Renderer2D::DrawGrid(camera, glm::vec3(0.0f, 0.0f, 0.0f), 100, glm::vec3(50.0f, 50.0f, 50.0f), glm::vec3(0.2f, 0.2f, 0.2f));
-				m_Grid->Draw(camera, ResourceManager::GetShader("instancedRendering"));
-				//MeshRenderer::ClearDepthBuffer(); // TODO: Check how to fix this double call
+
+				/*
+				The order of objects drawing is following:
+				1) Draw all opaque objects
+				2) Sort all the transparent objects
+				3) Draw all the transparent objects in sorted order
+				*/
 
 				// Render meshes with animations
 				{
@@ -160,6 +164,8 @@ namespace Yugo
 						MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("modelShader"));
 					}
 				}
+
+				m_Grid->Draw(camera, ResourceManager::GetShader("instancedRendering"));
 			}
 		}
 
