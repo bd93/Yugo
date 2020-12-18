@@ -37,6 +37,7 @@ namespace Yugo
 		// Flags for Scene ImGui window inside editor
 		bool m_IsSceneWindowFocused;
 		bool m_IsSceneWindowHovered;
+
 		entt::entity m_SelectedSceneEntity; // Entity that is selected on mouse left click
 
 		// Scene Framebuffer info (visible scene texture inside Scene ImGui window)
@@ -51,7 +52,7 @@ namespace Yugo
 		};
 		SceneInfo m_SceneInfo;
 
-		// Relative to Scene Framebuffer (visible scene texture inside Scene ImGui window)
+		// Mouse info relative to Scene Framebuffer (visible scene texture inside Scene ImGui window)
 		struct MouseInfo
 		{
 			float MousePosX; 
@@ -62,10 +63,10 @@ namespace Yugo
 		MouseInfo m_MouseInfo;
 
 		/*
-		Active scene will be rendered in FrameBuffer;
-		Frame buffer has a texture (color buffer) attachment
-		and a render buffer as depth and stencil attachment;
-		FrameBuffer will be used to display Scene inside Scene editor window
+		Active scene will be rendered in m_FrameBuffer.
+		m_FrameBuffer will be used to display Scene inside Scene editor window.
+		For anti-aliasing purpose intermediate framebuffer is used to display Scene inside Scene editor window, 
+		because m_FrameBuffer has multisampled texture and only "normal" texture can be used.
 		*/
 		sPtr<FrameBuffer> m_FrameBuffer;
 		sPtr<FrameBuffer> m_IntermediateFrameBuffer;
@@ -73,9 +74,10 @@ namespace Yugo
 		sPtr<Texture> m_Texture;
 		sPtr<Texture> m_IntermediateTexture;
 
+		void ShowMenuBar();
 		void ShowProjectWindow();
 		void ShowInspectorWindow();
-		void ShowHierarchyWindow();
+		void ShowHierarchyWindow(entt::registry& registry);
 		void ShowSceneWindow();
 		void ShowImGuizmoWidget(TransformComponent& transform, const glm::mat4& projectionMatrix, const glm::mat4& viewMatrix);
 		void ShowFileDialogBox(const std::string& option, std::string& fullPath);

@@ -52,6 +52,7 @@ namespace Yugo
 		m_MainWindow->OnStart();
 		UserInput::SetGLFWwindow(m_MainWindow->m_GLFWwindow);
 
+		// Initialize ImGui
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
@@ -72,21 +73,21 @@ namespace Yugo
 		ImGui_ImplGlfw_InitForOpenGL(m_MainWindow->m_GLFWwindow, true);
 		ImGui_ImplOpenGL3_Init("#version 330");
 
-		// Initially create texture framebuffer with default size (1200x800)
+		// Initially create texture framebuffer with default size (1200 x 800)
 		CreateFrameBuffer(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 
 		m_Scene->OnStart();
-		//m_ScriptEngine->SetScene(m_GameWindow->m_Scene.get()); // TODO: Think about better solution!
 
 		Dispatcher::Subscribe<MouseButtonPress>(this);
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
 		Dispatcher::Subscribe<ImportAssetEvent>(this);
 		Dispatcher::Subscribe<MouseScroll>(this);
-		Dispatcher::Subscribe<WindowResize>(this);
+		//Dispatcher::Subscribe<WindowResize>(this);
 	}
 
 	void Editor::OnRender()
 	{
+		// ImGui rendering initialisation
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
@@ -119,109 +120,35 @@ namespace Yugo
 
 		ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
-		if (ImGui::BeginMenuBar())
-		{
-			static bool saveSuccess = false;
-			static bool saveError = false;
 
-			if (saveSuccess)
-			{
-				ImGui::OpenPopup("Success!");
-
-				if (ImGui::BeginPopupModal("Success!"))
-				{
-					ImGui::Text("This scene has been saved");
-					ImGui::Separator();
-					if (ImGui::Button("OK", ImVec2(120, 0))) { saveSuccess = false;  ImGui::CloseCurrentPopup(); }
-					ImGui::EndPopup();
-				}
-			}
-
-			if (saveError)
-			{
-				ImGui::OpenPopup("Error!");
-
-				if (ImGui::BeginPopupModal("Error!"))
-				{
-					ImGui::Text("First click Save As...");
-					ImGui::Separator();
-					if (ImGui::Button("OK", ImVec2(120, 0))) { saveError = false;  ImGui::CloseCurrentPopup(); }
-					ImGui::EndPopup();
-				}
-			}
-
-			if (ImGui::BeginMenu("File"))
-			{
-				if (ImGui::MenuItem("New Scene"))
-				{
-					m_Scene->m_Registry.clear();
-					m_SceneInfo.SceneName = "Default";
-					m_SceneInfo.SceneFilePath = "None";
-				}
-
-				if (ImGui::MenuItem("Load Scene"))
-				{
-					std::string filePath;
-					ShowFileDialogBox("Open", filePath);
-					m_Scene->LoadScene(filePath);
-					m_SceneInfo.SceneFilePath = filePath;
-					std::size_t foundBegin = filePath.find_last_of("\\");
-					std::size_t foundEnd = filePath.find_last_of(".");
-					std::string fileName = filePath.substr(foundBegin + 1, foundEnd - foundBegin - 1);
-					m_SceneInfo.SceneName = fileName;
-				}
-				ImGui::Separator();
-
-				if (ImGui::MenuItem("Save"))
-				{
-					const auto& filePath = m_SceneInfo.SceneFilePath;
-
-					if (filePath == "None")
-					{
-						saveError = true;
-					}
-					else
-					{
-						m_Scene->SaveScene(filePath);
-						saveSuccess = true;
-					}
-				}
-
-				if (ImGui::MenuItem("Save As..."))
-				{
-					std::string filePath;
-					ShowFileDialogBox("Save As", filePath);
-					m_Scene->SaveScene(filePath);
-					m_SceneInfo.SceneFilePath = filePath;
-					std::size_t foundBegin = filePath.find_last_of("\\");
-					std::size_t foundEnd = filePath.find_last_of(".");
-					std::string fileName = filePath.substr(foundBegin + 1, foundEnd - foundBegin - 1);
-					m_SceneInfo.SceneName = fileName;
-				}
-				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
-		}
-		ImGui::End();
-
-		ShowSceneWindow(); // Show ImGuizmo widget on entity click (inside ShowSceneWindow()) goes first becuase it manipulates entity's model matrix
-		ShowHierarchyWindow();
+		/*
+		The order of showing widgets/windows is important!
+		E.g. ShowImGuizmo method, which is called in ShowSceneWindow method, need to be in front of ShowInspectorWindow. 
+		The reason is because of model matrix update.
+		Editor's OnUpdate method is called first and thus model matrix is updated with TransformComponent members (Position, Rotation, Scale).
+		Then in ShowImGuizmo method model matrix is updated if user moves entity with imguizmo widget.
+		Then in ShowInspectorWindow method model matrix is decomposed to TransformComponent members, so user can manualy change them in Inspector window.
+		Just right after this model matrix is recomposed (updated) with TransformComponent members.
+		*/
+		ShowMenuBar();
+		ShowSceneWindow();
+		ShowHierarchyWindow(m_Scene->m_Registry);
 		ShowInspectorWindow();
 		ShowProjectWindow();
 
-		//ImGui::ShowDemoWindow();
+		//ImGui::ShowDemoWindow();  // ImGui demo window with all possible widgets/features
 
+		// Render Scene in Game window when editor is in play mode
 		if (s_PlayMode)
 		{
 			Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
-
+			glEnable(GL_DEPTH_TEST);
+			glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of game window background
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-			//m_Scene->OnRender();
-			m_GameWindow->m_Scene->OnRender();
-			Window::PollEvents(); // temp
+			m_GameWindow->m_Scene->OnRender(); // Game window scene is a copy of Editor's scene
+			Window::PollEvents(); // temp!
 			m_GameWindow->SwapBuffers();
-			
+			glDisable(GL_DEPTH_TEST);
 			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 			
 			if (m_GameWindow->WindowShouldClose())
@@ -238,9 +165,10 @@ namespace Yugo
 
 		// Render Scene
 		m_FrameBuffer->Bind();
+
+		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of framebuffer's texture inside scene imgui window
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//glEnable(GL_DEPTH_TEST);
 
 		m_Scene->OnRender();
 
@@ -267,12 +195,13 @@ namespace Yugo
 			}
 		}
 
-		if (s_RenderUI)
-			m_Scene->m_UserInterface->OnRender();
-		m_FrameBuffer->BlitMultisampled(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight, m_FrameBuffer->GetId(), m_IntermediateFrameBuffer->GetId()); // temp!
-		m_FrameBuffer->Unbind();
+		glDisable(GL_DEPTH_TEST);
 
-		//ShowSceneWindow(); // temp
+		//if (s_RenderUI)
+		//	m_Scene->m_UserInterface->OnRender();
+
+		m_FrameBuffer->BlitMultisampled(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight, m_FrameBuffer->GetId(), m_IntermediateFrameBuffer->GetId());
+		m_FrameBuffer->Unbind();
 
 		// Render ImGui
 		ImGuiIO& io = ImGui::GetIO();
@@ -441,6 +370,94 @@ namespace Yugo
 		m_Scene->OnShutdown();
 		m_MainWindow->OnShutdown();
 		Window::TerminateGLFW();
+	}
+
+	void Editor::ShowMenuBar()
+	{
+		if (ImGui::BeginMenuBar())
+		{
+			static bool saveSuccess = false;
+			static bool saveError = false;
+
+			if (saveSuccess)
+			{
+				ImGui::OpenPopup("Success!");
+
+				if (ImGui::BeginPopupModal("Success!"))
+				{
+					ImGui::Text("This scene has been saved");
+					ImGui::Separator();
+					if (ImGui::Button("OK", ImVec2(120, 0))) { saveSuccess = false;  ImGui::CloseCurrentPopup(); }
+					ImGui::EndPopup();
+				}
+			}
+
+			if (saveError)
+			{
+				ImGui::OpenPopup("Error!");
+
+				if (ImGui::BeginPopupModal("Error!"))
+				{
+					ImGui::Text("First click Save As...");
+					ImGui::Separator();
+					if (ImGui::Button("OK", ImVec2(120, 0))) { saveError = false;  ImGui::CloseCurrentPopup(); }
+					ImGui::EndPopup();
+				}
+			}
+
+			if (ImGui::BeginMenu("File"))
+			{
+				if (ImGui::MenuItem("New Scene"))
+				{
+					m_Scene->m_Registry.clear();
+					m_SceneInfo.SceneName = "Default";
+					m_SceneInfo.SceneFilePath = "None";
+				}
+
+				if (ImGui::MenuItem("Load Scene"))
+				{
+					std::string filePath;
+					ShowFileDialogBox("Open", filePath);
+					m_Scene->LoadScene(filePath);
+					m_SceneInfo.SceneFilePath = filePath;
+					std::size_t foundBegin = filePath.find_last_of("\\");
+					std::size_t foundEnd = filePath.find_last_of(".");
+					std::string fileName = filePath.substr(foundBegin + 1, foundEnd - foundBegin - 1);
+					m_SceneInfo.SceneName = fileName;
+				}
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Save"))
+				{
+					const auto& filePath = m_SceneInfo.SceneFilePath;
+
+					if (filePath == "None")
+					{
+						saveError = true;
+					}
+					else
+					{
+						m_Scene->SaveScene(filePath);
+						saveSuccess = true;
+					}
+				}
+
+				if (ImGui::MenuItem("Save As..."))
+				{
+					std::string filePath;
+					ShowFileDialogBox("Save As", filePath);
+					m_Scene->SaveScene(filePath);
+					m_SceneInfo.SceneFilePath = filePath;
+					std::size_t foundBegin = filePath.find_last_of("\\");
+					std::size_t foundEnd = filePath.find_last_of(".");
+					std::string fileName = filePath.substr(foundBegin + 1, foundEnd - foundBegin - 1);
+					m_SceneInfo.SceneName = fileName;
+				}
+				ImGui::EndMenu();
+			}
+			ImGui::EndMenuBar();
+		}
+		ImGui::End();
 	}
 
 	void Editor::ShowProjectWindow()
@@ -939,7 +956,7 @@ namespace Yugo
 		ImGui::End();
 	}
 
-	void Editor::ShowHierarchyWindow()
+	void Editor::ShowHierarchyWindow(entt::registry& registry)
 	{
 		if (ImGui::Begin("Hierarchy", NULL))
 		{
@@ -968,7 +985,8 @@ namespace Yugo
 				ImGui::OpenPopup(std::to_string(rootId).c_str());
 			ShowHierarchyMenuPopup(entt::null);
 
-			auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent>();
+			//auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent>();
+			auto view = registry.view<RelationshipComponent, EntityTagComponent>();
 
 			TraverseFun traverse = [&](entt::entity entity) {
 
@@ -1042,7 +1060,8 @@ namespace Yugo
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()); // Increase spacing to differentiate leaves from expanded contents.
 
-				auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent, TransformComponent>();
+				//auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent, TransformComponent>();
+				auto view = registry.view<RelationshipComponent, EntityTagComponent, TransformComponent>();
 				for (auto entity : view)
 				{
 					auto& relationship = view.get<RelationshipComponent>(entity);
@@ -1740,9 +1759,6 @@ namespace Yugo
 			MeshRenderer::SubmitCopy(mesh);
 		}
 
-		glEnable(GL_DEPTH_TEST);
-		glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of game window background
-
 		Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 	}
 
@@ -1752,21 +1768,20 @@ namespace Yugo
 		m_IntermediateFrameBuffer = sPtrCreate<FrameBuffer>();
 		m_RenderBuffer = sPtrCreate<RenderBuffer>();
 		//m_Texture = sPtrCreate<Texture>(width, height);
-		m_Texture = sPtrCreate<Texture>(width, height, 4); // temp
+		m_Texture = sPtrCreate<Texture>(width, height, 4);
 		m_IntermediateTexture = sPtrCreate<Texture>(width, height);
 
 		m_FrameBuffer->Bind();
 		m_RenderBuffer->Bind();
 		//m_RenderBuffer->Storage(width, height);
-		m_RenderBuffer->Storage(width, height, 4); // temp
+		m_RenderBuffer->Storage(width, height, 4);
 		m_RenderBuffer->Unbind();
-		m_FrameBuffer->AttachMultisampled(m_Texture->GetId(), FrameBuffer::AttachmentType::TextureBuffer); // temp
+		m_FrameBuffer->AttachMultisampled(m_Texture->GetId(), FrameBuffer::AttachmentType::TextureBuffer);
+		m_FrameBuffer->AttachMultisampled(m_RenderBuffer->GetId(), FrameBuffer::AttachmentType::RenderBuffer);
 		//m_FrameBuffer->Attach(m_Texture->GetId(), FrameBuffer::AttachmentType::TextureBuffer);
-		m_FrameBuffer->AttachMultisampled(m_RenderBuffer->GetId(), FrameBuffer::AttachmentType::RenderBuffer); // temp
 		//m_FrameBuffer->Attach(m_RenderBuffer->GetId(), FrameBuffer::AttachmentType::RenderBuffer);
 		m_FrameBuffer->Unbind();
 
-		// temp!
 		m_IntermediateFrameBuffer->Bind();
 		m_IntermediateFrameBuffer->Attach(m_IntermediateTexture->GetId(), FrameBuffer::AttachmentType::TextureBuffer);
 		m_IntermediateFrameBuffer->Unbind();

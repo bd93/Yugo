@@ -66,8 +66,6 @@ namespace Yugo
 		Camera::OnStart(transform, camera);
 
 		m_Grid = sPtrCreate<Grid>(65536, 50.0f, 2.2f);
-
-		glEnable(GL_DEPTH_TEST);
 	}
 
 	/**
@@ -165,7 +163,7 @@ namespace Yugo
 					}
 				}
 
-				m_Grid->Draw(camera, ResourceManager::GetShader("instancedRendering"));
+				//m_Grid->Draw(camera, ResourceManager::GetShader("instancedRendering"));
 			}
 		}
 
