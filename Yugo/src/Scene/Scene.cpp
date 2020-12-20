@@ -18,7 +18,7 @@ namespace Yugo
 
 	Scene::Scene()
 	{
-		m_UserInterface = uPtrCreate<UserInterface>(this);
+		//m_UserInterface = uPtrCreate<UserInterface>(this);
 	}
 
 	/**
@@ -56,7 +56,7 @@ namespace Yugo
 			);
 		ResourceManager::AddShader("instancedRendering", instancedRendering);
 
-		m_UserInterface->OnStart();
+		//m_UserInterface->OnStart();
 
 		auto cameraEntity = CreateEntity();
 		auto& transform = cameraEntity.AddComponent<TransformComponent>();
@@ -115,7 +115,7 @@ namespace Yugo
 			}
 		}
 		// Update game UI
-		m_UserInterface->OnUpdate(ts);
+		//m_UserInterface->OnUpdate(ts);
 	}
 
 	/**
@@ -125,47 +125,32 @@ namespace Yugo
      */
 	void Scene::OnRender()
 	{
-		auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
-		for (auto entity : view)
+		auto& camera = GetCamera();
+
+		// Render meshes with animations
 		{
-			auto& tag = view.get<EntityTagComponent>(entity);
-			if (tag.Name == "Main Camera")
+			auto view = m_Registry.view<MeshComponent, TransformComponent, AnimationComponent>();
+			for (auto entity : view)
 			{
-				auto& camera = view.get<CameraComponent>(entity);
-
-				/*
-				The order of objects drawing is following:
-				1) Draw all opaque objects
-				2) Sort all the transparent objects
-				3) Draw all the transparent objects in sorted order
-				*/
-
-				// Render meshes with animations
-				{
-					auto view = m_Registry.view<MeshComponent, TransformComponent, AnimationComponent>();
-					for (auto entity : view)
-					{
-						auto& [mesh, transform, animation] = view.get<MeshComponent, TransformComponent, AnimationComponent>(entity);
-						if (animation.IsAnimationRunning)
-							MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("animatedModelShader"));
-						else
-							MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("modelShader"));
-					}
-				}
-
-				// Render meshes without animations
-				{
-					auto view = m_Registry.view<MeshComponent, TransformComponent>(entt::exclude<AnimationComponent>);
-					for (auto entity : view)
-					{
-						auto& [mesh, transform] = view.get<MeshComponent, TransformComponent>(entity);
-						MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("modelShader"));
-					}
-				}
-
-				//m_Grid->Draw(camera, ResourceManager::GetShader("instancedRendering"));
+				auto& [mesh, transform, animation] = view.get<MeshComponent, TransformComponent, AnimationComponent>(entity);
+				if (animation.IsAnimationRunning)
+					MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("animatedModelShader"));
+				else
+					MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("modelShader"));
 			}
 		}
+
+		// Render meshes without animations
+		{
+			auto view = m_Registry.view<MeshComponent, TransformComponent>(entt::exclude<AnimationComponent>);
+			for (auto entity : view)
+			{
+				auto& [mesh, transform] = view.get<MeshComponent, TransformComponent>(entity);
+				MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("modelShader"));
+			}
+		}
+
+		//m_Grid->Draw(camera, ResourceManager::GetShader("instancedRendering"));
 
 		//m_UserInterface->OnRender();
 	}
@@ -177,7 +162,7 @@ namespace Yugo
      */
 	void Scene::OnShutdown()
 	{
-		m_UserInterface->OnShutdown();
+		//m_UserInterface->OnShutdown();
 		// TODO: Scene shutdown goes here...
 	}
 
@@ -262,6 +247,17 @@ namespace Yugo
 	{
 		Entity entity = { m_Registry.create(), name, this };
 		return entity;
+	}
+
+	CameraComponent& Scene::GetCamera()
+	{
+		auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
+		for (auto entity : view)
+		{
+			auto& tag = view.get<EntityTagComponent>(entity);
+			if (tag.Name == "Main Camera")
+				return view.get<CameraComponent>(entity);
+		}
 	}
 
 }

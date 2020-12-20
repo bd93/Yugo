@@ -41,6 +41,8 @@ namespace Yugo
 
 		Entity CreateEntity(const std::string& name = "");
 		
+		CameraComponent& GetCamera();
+		
 		template <typename ComponentType>
 		static void CloneRegistry(const entt::registry& from, entt::registry& to)
 		{
@@ -72,7 +74,7 @@ namespace Yugo
 
 	private:
 		entt::registry m_Registry; // Registry is kind of in-memory database storage for entities and components
-		uPtr<UserInterface> m_UserInterface;
+		//uPtr<UserInterface> m_UserInterface;
 		sPtr<Grid> m_Grid;
 		std::unordered_map<entt::id_type, CloneFunctionType*> m_CloneFunctions;
 	};

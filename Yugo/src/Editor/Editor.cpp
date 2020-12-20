@@ -19,8 +19,10 @@ namespace Yugo
 
 	// Play mode flag
 	static bool s_PlayMode = false;
+	// Show/hide Scene in editor
+	static bool s_RenderScene = true;
 	// Show/hide in-game UI in editor
-	static bool s_RenderUI = true;
+	static bool s_RenderUI = false;
 	// Show/hide bounding boxes
 	static bool s_RenderBoundingBox = false;
 
@@ -38,15 +40,25 @@ namespace Yugo
 		: m_MainWindow(uPtrCreate<Window>("Editor", 1200, 800)),
 		m_GameWindow(uPtrCreate<Window>("Game", 1200, 800)),
 		m_Scene(sPtrCreate<Scene>()),
+		m_UserInterface(sPtrCreate<UserInterface>()),
 		m_ScriptEngine(uPtrCreate<ScriptEngine>()),
 		m_SelectedSceneEntity(entt::null)
 	{
 		m_SceneInfo.SceneName = "Default";
 		m_SceneInfo.SceneFilePath = "None";
+		/*
+		By default initialize width and heigh to main window size.
+		In the next frame it will be resized to Scene ImGui window in UpdateSceneViewport method.
+		*/
 		m_SceneInfo.SceneWidth = m_MainWindow->m_Width;
 		m_SceneInfo.SceneHeight = m_MainWindow->m_Height;
 	}
 
+	/**
+	 * @brief Method to be called during application OnStart stage.
+	 *
+	 * This method initialize all necessary components.
+	 */
 	void Editor::OnStart()
 	{
 		m_MainWindow->OnStart();
@@ -77,6 +89,7 @@ namespace Yugo
 		CreateFrameBuffer(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 
 		m_Scene->OnStart();
+		m_UserInterface->OnStart();
 
 		Dispatcher::Subscribe<MouseButtonPress>(this);
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
@@ -85,6 +98,12 @@ namespace Yugo
 		//Dispatcher::Subscribe<WindowResize>(this);
 	}
 
+	/**
+	 * @brief Method to be called during application OnRender stage.
+	 *
+	 * This method renders ImGui widgets.
+	 * Inside Scene window it renders Scene and UI.
+	 */
 	void Editor::OnRender()
 	{
 		// ImGui rendering initialisation
@@ -132,11 +151,19 @@ namespace Yugo
 		*/
 		ShowMenuBar();
 		ShowSceneWindow();
-		ShowHierarchyWindow(m_Scene->m_Registry);
-		ShowInspectorWindow();
+		if (s_RenderScene)
+		{
+			ShowHierarchyWindow(m_Scene->m_Registry);
+			ShowInspectorWindow(m_Scene->m_Registry);
+		}
+		else if (s_RenderUI)
+		{
+			ShowHierarchyWindow(m_UserInterface->m_Registry);
+			ShowInspectorWindow(m_UserInterface->m_Registry);
+		}
 		ShowProjectWindow();
 
-		//ImGui::ShowDemoWindow();  // ImGui demo window with all possible widgets/features
+		ImGui::ShowDemoWindow();  // ImGui demo window with all possible widgets/features
 
 		// Render Scene in Game window when editor is in play mode
 		if (s_PlayMode)
@@ -163,42 +190,41 @@ namespace Yugo
 		}
 
 
-		// Render Scene
+		// Render Scene in editor's Scene window
 		m_FrameBuffer->Bind();
 
 		glEnable(GL_DEPTH_TEST);
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of framebuffer's texture inside scene imgui window
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		m_Scene->OnRender();
-
-		if (s_RenderBoundingBox)
+		if (s_RenderScene)
 		{
-			auto view = m_Scene->m_Registry.view<MeshComponent, BoundBoxComponent, TransformComponent>();
-			for (auto entity : view)
+			m_Scene->OnRender();
+
+			if (s_RenderBoundingBox)
 			{
-				auto& [aabb, transform] = view.get<BoundBoxComponent, TransformComponent>(entity);
-				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
+				auto& camera = m_Scene->GetCamera();
+
+				auto view = m_Scene->m_Registry.view<MeshComponent, BoundBoxComponent, TransformComponent>();
 				for (auto entity : view)
 				{
-					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
-					if (tag.Name == "Main Camera")
-					{
-						MeshRenderer::DrawAABB(aabb, transform, camera, ResourceManager::GetShader("quadShader"));
+					auto& [aabb, transform] = view.get<BoundBoxComponent, TransformComponent>(entity);
 
-						//for (const auto& subAABB : aabb.SubAABBs)
-						//{
-						//	MeshRenderer::DrawAABB(subAABB, transform, ResourceManager::GetShader("quadShader"));
-						//}
-					}
+					MeshRenderer::DrawAABB(aabb, transform, camera, ResourceManager::GetShader("quadShader"));
+
+					//for (const auto& subAABB : aabb.SubAABBs)
+					//{
+					//	MeshRenderer::DrawAABB(subAABB, transform, ResourceManager::GetShader("quadShader"));
+					//}
 				}
 			}
+
+			glDisable(GL_DEPTH_TEST);
 		}
-
-		glDisable(GL_DEPTH_TEST);
-
-		//if (s_RenderUI)
-		//	m_Scene->m_UserInterface->OnRender();
+		else if (s_RenderUI)
+		{
+			m_UserInterface->OnRender();
+		}
 
 		m_FrameBuffer->BlitMultisampled(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight, m_FrameBuffer->GetId(), m_IntermediateFrameBuffer->GetId());
 		m_FrameBuffer->Unbind();
@@ -243,7 +269,10 @@ namespace Yugo
 		}
 		else
 		{
-			m_Scene->OnUpdate(ts);
+			if (s_RenderScene)
+				m_Scene->OnUpdate(ts);
+			else if (s_RenderUI)
+				m_UserInterface->OnUpdate(ts);
 
 			auto view = m_Scene->m_Registry.view<MeshComponent, TransformComponent, AnimationComponent>();
 			for (auto entity : view)
@@ -264,9 +293,6 @@ namespace Yugo
 				}
 			}
 		}
-
-		if (s_RenderUI)
-			m_Scene->m_UserInterface->OnUpdate(ts);
 	}
 
 	void Editor::OnEvent(const Event& event)
@@ -282,13 +308,8 @@ namespace Yugo
 				//const auto& windowResize = static_cast<const WindowResize&>(event);
 				//int screenWidth = windowResize.GetWidth();
 				//int screenHeight = windowResize.GetHeight();
-				//auto view = m_Scene->m_Registry.view<CameraComponent, TransformComponent, EntityTagComponent>();
-				//for (auto entity : view)
-				//{
-				//	auto& [camera, transform, tag] = view.get<CameraComponent, TransformComponent, EntityTagComponent>(entity);
-				//	if (tag.Name == "Main Camera")
-				//		Camera::UpdateProjectionMatrix(camera, screenWidth, screenHeight);
-				//}
+				//auto& camera = m_Scene->GetCamera();
+				//Camera::UpdateProjectionMatrix(camera, screenWidth, screenHeight);
 			}
 
 			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
@@ -303,17 +324,10 @@ namespace Yugo
 				{
 					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && m_IsSceneWindowHovered)
 					{
-						auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
-						for (auto entity : view)
-						{
-							auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
-							if (tag.Name == "Main Camera")
-							{
-								MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
-								SelectMesh();
-								Camera::ResetMousePositionOffset(camera);
-							}
-						}
+						auto& camera = m_Scene->GetCamera();
+						MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
+						SelectMesh();
+						Camera::ResetMousePositionOffset(camera);
 					}
 				}
 			}
@@ -321,16 +335,8 @@ namespace Yugo
 			// Import asset event is invoked when user drag and drop asset to scene imgui window 
 			if (event.GetEventType() == EventType::ImportAsset)
 			{
-				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
-				for (auto entity : view)
-				{
-					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
-					if (tag.Name == "Main Camera")
-					{
-						camera = view.get<CameraComponent>(entity);
-						MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
-					}
-				}
+				auto& camera = m_Scene->GetCamera();
+				MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 				
 				const auto& importAssetEvent = static_cast<const ImportAssetEvent&>(event);
 				const auto& importAssetFilePath = importAssetEvent.GetAssetFilePath();
@@ -344,17 +350,8 @@ namespace Yugo
 				if (m_IsSceneWindowHovered)
 				{
 					const auto& mouseScroll = static_cast<const MouseScroll&>(event);
-
-					auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
-					for (auto entity : view)
-					{
-						auto& tag = view.get<EntityTagComponent>(entity);
-						if (tag.Name == "Main Camera")
-						{
-							auto& camera = view.get<CameraComponent>(entity);
-							Camera::Scroll(mouseScroll.GetOffsetY(), camera);
-						}
-					}
+					auto& camera = m_Scene->GetCamera();
+					Camera::Scroll(mouseScroll.GetOffsetY(), camera);
 				}
 			}
 		}
@@ -635,11 +632,32 @@ namespace Yugo
 		ImGui::End();
 	}
 
-	void Editor::ShowInspectorWindow()
+	void Editor::ShowInspectorWindow(entt::registry& registry)
 	{
 		ImGui::Begin("Inspector");
 
-		ImGui::Checkbox("Show UI", &s_RenderUI);
+		static int radioOption = 0;
+		static int pastRadiooption = radioOption;
+		ImGui::RadioButton("Show Scene", &radioOption, 0); 
+		ImGui::SameLine();
+		ImGui::RadioButton("Show UI", &radioOption, 1);
+		if (radioOption == 0)
+		{
+			s_RenderScene = true;
+			s_RenderUI = false;
+		}
+		else if (radioOption == 1)
+		{
+			s_RenderScene = false;
+			s_RenderUI = true;
+		}
+		if (pastRadiooption != radioOption)
+		{
+			m_SelectedSceneEntity = entt::null;
+			s_CurrentGizmoOperation = ImGuizmo::BOUNDS;
+			pastRadiooption = radioOption;
+		}
+
 		ImGui::Separator();
 
 		const char* components[] = { "MeshComponent", "SpriteComponent", "AnimationComponent", "ScriptComponent" };
@@ -650,18 +668,18 @@ namespace Yugo
 			for (int i = 0; i < IM_ARRAYSIZE(components); i++)
 			{
 				toggles[i] = false; // Reset previous state
-				if (components[i] == "MeshComponent" && m_Scene->m_Registry.has<MeshComponent>(m_SelectedSceneEntity))
+				if (components[i] == "MeshComponent" && registry.has<MeshComponent>(m_SelectedSceneEntity))
 					toggles[i] = true;
-				if (components[i] == "SpriteComponent" && m_Scene->m_Registry.has<SpriteComponent>(m_SelectedSceneEntity))
+				if (components[i] == "SpriteComponent" && registry.has<SpriteComponent>(m_SelectedSceneEntity))
 					toggles[i] = true;
-				if (components[i] == "AnimationComponent" && m_Scene->m_Registry.has<AnimationComponent>(m_SelectedSceneEntity))
+				if (components[i] == "AnimationComponent" && registry.has<AnimationComponent>(m_SelectedSceneEntity))
 					toggles[i] = true;
-				if (components[i] == "ScriptComponent" && m_Scene->m_Registry.has<ScriptComponent>(m_SelectedSceneEntity))
+				if (components[i] == "ScriptComponent" && registry.has<ScriptComponent>(m_SelectedSceneEntity))
 					toggles[i] = true;
 			}
 
 			// Always show TransformComponent
-			auto& transform = m_Scene->m_Registry.get<TransformComponent>(m_SelectedSceneEntity);
+			auto& transform = registry.get<TransformComponent>(m_SelectedSceneEntity);
 
 			ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transform.ModelMatrix), glm::value_ptr(transform.Position), glm::value_ptr(transform.Rotation), glm::value_ptr(transform.Scale));
 			ImGui::InputFloat3("Translate", glm::value_ptr(transform.Position));
@@ -672,9 +690,9 @@ namespace Yugo
 			ImGui::NewLine();
 
 			// Show padding options for UI canvas widget
-			if (m_Scene->m_Registry.has<CanvasWidgetComponent>(m_SelectedSceneEntity))
+			if (registry.has<CanvasWidgetComponent>(m_SelectedSceneEntity))
 			{
-				//auto& relationship = m_Scene->m_Registry.get<RelationshipComponent>(m_SelectedSceneEntity);
+				//auto& relationship = registry.get<RelationshipComponent>(m_SelectedSceneEntity);
 				static float padding[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; // left, right, top, bottom
 				ImGui::InputFloat4("Padding", padding);
 				static int dimensions[2] = { 1, 1 };
@@ -685,11 +703,11 @@ namespace Yugo
 					CreateCanvasMatrixWidget(dimensions, padding, cellWidgetSize, m_SelectedSceneEntity);
 			}
 			// Show text input for widget's text
-			if (m_Scene->m_Registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
+			if (registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
 			{
 				static entt::entity previousEntity;
 				static char buf[64] = "";
-				auto& text = m_Scene->m_Registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
+				auto& text = registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
 				if (previousEntity != m_SelectedSceneEntity)
 					memset(buf, 0, 64 * sizeof(char));
 				if (ImGui::InputText("Text", buf, 64))
@@ -752,7 +770,7 @@ namespace Yugo
 
 					if (components[i] == "AnimationComponent")
 					{
-						auto view = m_Scene->m_Registry.view<MeshComponent, AnimationComponent>();
+						auto view = registry.view<MeshComponent, AnimationComponent>();
 						for (auto entity : view)
 						{
 							auto& [mesh, animation] = view.get<MeshComponent, AnimationComponent>(entity);
@@ -806,9 +824,9 @@ namespace Yugo
 
 						if (previousEntity != m_SelectedSceneEntity)
 						{
-							if (m_Scene->m_Registry.has<ScriptComponent>(m_SelectedSceneEntity))
+							if (registry.has<ScriptComponent>(m_SelectedSceneEntity))
 							{
-								auto& scriptComponent = m_Scene->m_Registry.get<ScriptComponent>(m_SelectedSceneEntity);
+								auto& scriptComponent = registry.get<ScriptComponent>(m_SelectedSceneEntity);
 								scriptFilePath = scriptComponent.ScriptFilePath;
 							}
 							else
@@ -825,8 +843,8 @@ namespace Yugo
 						ImGui::SameLine();
 						if (ImGui::Button("Attach Script"))
 						{
-							auto& scriptComponent = m_Scene->m_Registry.get<ScriptComponent>(m_SelectedSceneEntity);
-							auto& entityTagComponent = m_Scene->m_Registry.get<EntityTagComponent>(m_SelectedSceneEntity);
+							auto& scriptComponent = registry.get<ScriptComponent>(m_SelectedSceneEntity);
+							auto& entityTagComponent = registry.get<EntityTagComponent>(m_SelectedSceneEntity);
 
 							scriptComponent.ScriptFilePath = scriptFilePath;
 							Entity entity(m_SelectedSceneEntity, entityTagComponent.Name, m_Scene.get());
@@ -838,10 +856,10 @@ namespace Yugo
 
 					if (components[i] == "SpriteComponent")
 					{
-						auto view = m_Scene->m_Registry.view<SpriteComponent>();
+						auto view = registry.view<SpriteComponent>();
 						if (m_SelectedSceneEntity != entt::null)
 						{
-							auto& sprite = m_Scene->m_Registry.get<SpriteComponent>(m_SelectedSceneEntity);
+							auto& sprite = registry.get<SpriteComponent>(m_SelectedSceneEntity);
 							auto& texture = sprite.Texture;
 							ImGui::Text("Texture:");
 							ImGui::Image((void*)texture.GetId(), ImVec2(80.0f, 80.0f), ImVec2(0, 0), ImVec2(1, 1));
@@ -877,9 +895,9 @@ namespace Yugo
 								ImGuiColorEditFlags_DisplayHex;
 							if (ImGui::ColorPicker4("My Color", (float*)&color, flags, &ref_color_v.x))
 							{
-								if (m_Scene->m_Registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
+								if (registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
 								{
-									auto& text = m_Scene->m_Registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
+									auto& text = registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
 									text.Color = glm::vec4(color.x, color.y, color.z, color.w);
 								}
 								else
@@ -907,44 +925,44 @@ namespace Yugo
 						{
 							if (toggles[i])
 							{
-								auto& entityTag = m_Scene->m_Registry.get<EntityTagComponent>(m_SelectedSceneEntity);
+								auto& entityTag = registry.get<EntityTagComponent>(m_SelectedSceneEntity);
 								auto& [loadedMesh, loadedAnimation] = ModelImporter::LoadMeshFile(entityTag.AssetFilePath);
-								auto& mesh = m_Scene->m_Registry.emplace<MeshComponent>(m_SelectedSceneEntity, *loadedMesh);
+								auto& mesh = registry.emplace<MeshComponent>(m_SelectedSceneEntity, *loadedMesh);
 								MeshRenderer::Submit(mesh);
 							}
 							else
 							{
-								m_Scene->m_Registry.remove<MeshComponent>(m_SelectedSceneEntity);
+								registry.remove<MeshComponent>(m_SelectedSceneEntity);
 							}
 						}
 						if (components[i] == "SpriteComponent")
 						{
 							if (toggles[i])
 							{
-								auto& sprite = m_Scene->m_Registry.emplace<SpriteComponent>(m_SelectedSceneEntity);
+								auto& sprite = registry.emplace<SpriteComponent>(m_SelectedSceneEntity);
 								SpriteRenderer::Submit(sprite);
 							}
 							else
 							{
-								m_Scene->m_Registry.remove<SpriteComponent>(m_SelectedSceneEntity);
+								registry.remove<SpriteComponent>(m_SelectedSceneEntity);
 							}
 						}
 						if (components[i] == "AnimationComponent")
 						{
 							if (toggles[i])
-								m_Scene->m_Registry.emplace<AnimationComponent>(m_SelectedSceneEntity);
+								registry.emplace<AnimationComponent>(m_SelectedSceneEntity);
 							else
-								m_Scene->m_Registry.remove<AnimationComponent>(m_SelectedSceneEntity);
+								registry.remove<AnimationComponent>(m_SelectedSceneEntity);
 						}
 						if (components[i] == "ScriptComponent")
 						{
 							if (toggles[i])
 							{
-								m_Scene->m_Registry.emplace<ScriptComponent>(m_SelectedSceneEntity);
+								registry.emplace<ScriptComponent>(m_SelectedSceneEntity);
 							}
 							else
 							{
-								m_Scene->m_Registry.remove<ScriptComponent>(m_SelectedSceneEntity);
+								registry.remove<ScriptComponent>(m_SelectedSceneEntity);
 							}
 						}
 					}
@@ -983,9 +1001,8 @@ namespace Yugo
 
 			if (ImGui::IsItemClicked(1))
 				ImGui::OpenPopup(std::to_string(rootId).c_str());
-			ShowHierarchyMenuPopup(entt::null);
+			ShowHierarchyMenuPopup(entt::null, registry);
 
-			//auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent>();
 			auto view = registry.view<RelationshipComponent, EntityTagComponent>();
 
 			TraverseFun traverse = [&](entt::entity entity) {
@@ -1020,7 +1037,7 @@ namespace Yugo
 
 					if (ImGui::IsItemClicked(1))
 						ImGui::OpenPopup(std::to_string(entityId).c_str());
-					ShowHierarchyMenuPopup(entity);
+					ShowHierarchyMenuPopup(entity, registry);
 				}
 				else
 				{
@@ -1044,7 +1061,7 @@ namespace Yugo
 
 					if (ImGui::IsItemClicked(1))
 						ImGui::OpenPopup(std::to_string(entityId).c_str());
-					ShowHierarchyMenuPopup(entity);
+					ShowHierarchyMenuPopup(entity, registry);
 
 					if (rootNodeOpen)
 					{
@@ -1060,7 +1077,6 @@ namespace Yugo
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, ImGui::GetFontSize()); // Increase spacing to differentiate leaves from expanded contents.
 
-				//auto view = m_Scene->m_Registry.view<RelationshipComponent, EntityTagComponent, TransformComponent>();
 				auto view = registry.view<RelationshipComponent, EntityTagComponent, TransformComponent>();
 				for (auto entity : view)
 				{
@@ -1141,28 +1157,17 @@ namespace Yugo
 
 		if (m_SelectedSceneEntity != entt::null)
 		{
-			auto& transform = m_Scene->m_Registry.get<TransformComponent>(m_SelectedSceneEntity);
-
-			if (m_Scene->m_Registry.has<SpriteComponent>(m_SelectedSceneEntity))
+			if (s_RenderScene)
 			{
-				// For UI rendering
-				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
-				for (auto entity : view)
-				{
-					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
-					if (tag.Name == "UI Camera")
-						ShowImGuizmoWidget(transform, camera.Projection, glm::mat4(1.0f));
-				}
+				auto& transform = m_Scene->m_Registry.get<TransformComponent>(m_SelectedSceneEntity);
+				auto& camera = m_Scene->GetCamera();
+				ShowImGuizmoWidget(transform, camera.Projection, camera.View);
 			}
-			else
+			else if (s_RenderUI)
 			{
-				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
-				for (auto entity : view)
-				{
-					auto& [camera, tag] = view.get<CameraComponent, EntityTagComponent>(entity);
-					if (tag.Name == "Main Camera")
-						ShowImGuizmoWidget(transform, camera.Projection, camera.View);
-				}
+				auto& transform = m_UserInterface->m_Registry.get<TransformComponent>(m_SelectedSceneEntity);
+				auto& camera = m_UserInterface->GetCamera();
+				ShowImGuizmoWidget(transform, camera.Projection, glm::mat4(1.0f));
 			}
 		}
 		
@@ -1233,22 +1238,44 @@ namespace Yugo
 		auto deltaPosition = glm::vec3(position[0] - transform.Position.x, position[1] - transform.Position.y, position[2] - transform.Position.z); // Capture the amount by which this widget has been moved
 
 		// Update delta position for all children
-		auto view = m_Scene->m_Registry.view<RelationshipComponent, TransformComponent>();
-		using TraverseFun = std::function<void(entt::entity)>;
-		TraverseFun traverse = [&](entt::entity entity) {
-			auto& relationship = view.get<RelationshipComponent>(entity);
-			for (auto child : relationship.Children)
-			{
-				auto& childTransform = view.get<TransformComponent>(child);
-				//childTransform.DeltaPosition = transform.DeltaPosition;
-				childTransform.DeltaPosition = deltaPosition;
-			}
-			for (auto child : relationship.Children)
-			{
-				traverse(child);
-			}
-		};
-		traverse(m_SelectedSceneEntity);
+		if (s_RenderScene)
+		{
+			auto view = m_Scene->m_Registry.view<RelationshipComponent, TransformComponent>();
+			using TraverseFun = std::function<void(entt::entity)>;
+			TraverseFun traverse = [&](entt::entity entity) {
+				auto& relationship = view.get<RelationshipComponent>(entity);
+				for (auto child : relationship.Children)
+				{
+					auto& childTransform = view.get<TransformComponent>(child);
+					//childTransform.DeltaPosition = transform.DeltaPosition;
+					childTransform.DeltaPosition = deltaPosition;
+				}
+				for (auto child : relationship.Children)
+				{
+					traverse(child);
+				}
+			};
+			traverse(m_SelectedSceneEntity);
+		}
+		else if (s_RenderUI)
+		{
+			auto view = m_UserInterface->m_Registry.view<RelationshipComponent, TransformComponent>();
+			using TraverseFun = std::function<void(entt::entity)>;
+			TraverseFun traverse = [&](entt::entity entity) {
+				auto& relationship = view.get<RelationshipComponent>(entity);
+				for (auto child : relationship.Children)
+				{
+					auto& childTransform = view.get<TransformComponent>(child);
+					//childTransform.DeltaPosition = transform.DeltaPosition;
+					childTransform.DeltaPosition = deltaPosition;
+				}
+				for (auto child : relationship.Children)
+				{
+					traverse(child);
+				}
+			};
+			traverse(m_SelectedSceneEntity);
+		}
 	}
 
 	void Editor::ShowFileDialogBox(const std::string& option, std::string& fullPath)
@@ -1359,7 +1386,7 @@ namespace Yugo
 		ImGui::PopID();
 	}
 
-	void Editor::ShowHierarchyMenuPopup(entt::entity node)
+	void Editor::ShowHierarchyMenuPopup(entt::entity node, entt::registry& registry)
 	{
 		std::string stringNodeId;
 		bool isSceneRootNode = false;
@@ -1407,7 +1434,8 @@ namespace Yugo
 			ImGui::InputText("##spriteName", newSpriteName, IM_ARRAYSIZE(newSpriteName));
 			if (ImGui::Button("OK"))
 			{
-				auto newEntity = m_Scene->CreateEntity();
+				//auto newEntity = m_Scene->CreateEntity();
+				auto newEntity = m_UserInterface->CreateWidget();
 				
 				auto& tag = newEntity.AddComponent<EntityTagComponent>();
 				auto& transform = newEntity.AddComponent<TransformComponent>();
@@ -1423,7 +1451,8 @@ namespace Yugo
 
 				if (node != entt::null)
 				{
-					auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
+					//auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(node);
+					auto& parentRelationship = registry.get<RelationshipComponent>(node);
 					parentRelationship.Children.push_back(newEntity.GetEnttEntity());
 					parentRelationship.NumOfChildren++;
 				}
@@ -1445,7 +1474,8 @@ namespace Yugo
 			ImGui::InputText("##name", newSpriteName, IM_ARRAYSIZE(newSpriteName));
 			if (ImGui::Button("OK"))
 			{
-				auto& tag = m_Scene->m_Registry.get<EntityTagComponent>(node);
+				//auto& tag = m_Scene->m_Registry.get<EntityTagComponent>(node);
+				auto& tag = registry.get<EntityTagComponent>(node);
 				tag.Name = newSpriteName;
 
 				memset(newSpriteName, 0, 32 * sizeof(newSpriteName[0]));
@@ -1473,15 +1503,18 @@ namespace Yugo
 					m_SelectedSceneEntity = entt::null;
 
 				TraverseFun Traverse = [&](entt::entity entity) {
-					auto relationship = m_Scene->m_Registry.get<RelationshipComponent>(entity);
+					//auto relationship = m_Scene->m_Registry.get<RelationshipComponent>(entity);
+					auto relationship = registry.get<RelationshipComponent>(entity);
 					for (auto child : relationship.Children)
 						Traverse(child);
 
-					m_Scene->m_Registry.destroy(entity);
+					//m_Scene->m_Registry.destroy(entity);
+					registry.destroy(entity);
 
 					if (relationship.Parent != entt::null)
 					{
-						auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(relationship.Parent);
+						//auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(relationship.Parent);
+						auto& parentRelationship = registry.get<RelationshipComponent>(relationship.Parent);
 						uint32_t index = 0;
 						for (auto child : parentRelationship.Children)
 						{
@@ -1512,7 +1545,8 @@ namespace Yugo
 
 	void Editor::CreateWidget(const std::string& name, entt::entity parent)
 	{
-		auto newWidget = m_Scene->CreateEntity();
+		//auto newWidget = m_Scene->CreateEntity();
+		auto newWidget = m_UserInterface->CreateWidget();
 
 		auto& tag = newWidget.AddComponent<EntityTagComponent>();
 		auto& transform = newWidget.AddComponent<TransformComponent>();
@@ -1531,13 +1565,15 @@ namespace Yugo
 
 		if (parent != entt::null)
 		{
-			auto& parentTransform = m_Scene->m_Registry.get<TransformComponent>(parent);
+			//auto& parentTransform = m_Scene->m_Registry.get<TransformComponent>(parent);
+			auto& parentTransform = m_UserInterface->m_Registry.get<TransformComponent>(parent);
 			transform.Position = parentTransform.Position;
 			transform.Rotation = parentTransform.Rotation;
 			if (name == "Text")
 				transform.Position.x += parentTransform.Scale.x / 2.0f; // Pass center position so text can be rendered at centered position compared to parent widget
 
-			auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(parent);
+			//auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(parent);
+			auto& parentRelationship = m_UserInterface->m_Registry.get<RelationshipComponent>(parent);
 			parentRelationship.Children.push_back(newWidget.GetEnttEntity());
 			parentRelationship.NumOfChildren++;
 		}

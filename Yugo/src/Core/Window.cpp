@@ -16,7 +16,8 @@ namespace Yugo
 		m_WindowName(windowName),
 		m_Width(width),
 		m_Height(height),
-		m_Scene(sPtrCreate<Scene>())
+		m_Scene(sPtrCreate<Scene>()),
+		m_UserInterface(sPtrCreate<UserInterface>())
 	{
 	}
 

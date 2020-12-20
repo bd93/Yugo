@@ -42,14 +42,9 @@ namespace Yugo
 		CreateGameObject NewGameObject = (CreateGameObject)GetProcAddress(m_Lib, "CreateGameObject");
 		if (NewGameObject == NULL)
 			std::cout << "Cannot load CreateGameObject function!\n";
-
 		GetScriptFilePath ScriptFilePath = (GetScriptFilePath)GetProcAddress(m_Lib, "GetScriptFilePath");
 		if (ScriptFilePath == NULL)
 			std::cout << "Cannot load GetScriptFilePath function!\n";
-
-		//SetScriptInterface SetScriptInterfaceImpl = (SetScriptInterface)GetProcAddress(m_Lib, "SetScriptInterface");
-		//if (SetScriptInterfaceImpl == NULL)
-		//	std::cout << "Cannot load SetScriptInterface function!\n";
 		SetGameObject SetScriptGameObject = (SetGameObject)GetProcAddress(m_Lib, "SetGameObject");
 		if (SetScriptGameObject == NULL)
 			std::cout << "Cannot load SetGameObject function!\n";
@@ -73,12 +68,6 @@ namespace Yugo
 			Entity& entity = m_ScriptEntityMap[ScriptFilePath(m_ScriptArray.Scripts[i])];
 			auto& scriptComponent = m_Scene->GetComponent<ScriptComponent>(entity.GetEnttEntity());
 			scriptComponent.ClientScript = m_ScriptArray.Scripts[i]; // Shallow copy, consider if this will be a problem in the future!
-			//auto& scriptComponent = entity.GetComponent<ScriptComponent>(); // This causes bug!
-
-			//ScriptInterfaceImpl* scriptInterfaceImpl = new ScriptInterfaceImpl();
-			//scriptInterfaceImpl->SetEntity(entity);
-			//SetScriptInterfaceImpl(scriptInterfaceImpl); // ovo nece raditi ako ima vise skripti, potreban je vektor!
-			//m_ScriptInterfaceImpls.push_back(scriptInterfaceImpl);
 
 			GameLogic::GameObject* gameObject = NewGameObject(entity.GetEnttEntity());
 			SetScriptGameObject(gameObject, m_ScriptArray.Scripts[i]);

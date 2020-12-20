@@ -44,6 +44,7 @@ namespace Yugo
 
 	private:
 		sPtr<Scene> m_Scene;
+		sPtr<UserInterface> m_UserInterface;
 
 		GLFWwindow* m_GLFWwindow;
 		std::string m_WindowName;

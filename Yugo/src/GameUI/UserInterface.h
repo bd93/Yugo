@@ -1,6 +1,7 @@
 #pragma once
 #include "Events/Event.h"
 #include "Core/Core.h"
+#include "Camera/Camera.h"
 
 #include <entt/entt.hpp>
 
@@ -15,8 +16,10 @@ namespace Yugo
 		friend class Widget;
 		friend class Editor; // World editor UI
 
+		using TraverseFun = std::function<void(entt::entity)>;
+
 	public:
-		UserInterface(Scene* scene);
+		UserInterface();
 
 		void OnStart();
 		void OnEvent(const Event& event);
@@ -28,11 +31,12 @@ namespace Yugo
 		void LoadUserInterface();
 
 		Widget CreateWidget(const std::string& name = "");
+		
+		CameraComponent& GetCamera();
 
 	private:
-		Scene* m_Scene;
-		//sPtr<Camera> m_Camera;
 		entt::registry m_Registry;
+
 	};
 
 }

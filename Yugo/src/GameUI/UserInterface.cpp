@@ -8,17 +8,12 @@
 #include "Renderer/SpriteRenderer.h"
 #include "Renderer/TextRenderer.h"
 #include "Widget.h"
-#include "Scene/Scene.h"
 
 
 namespace Yugo
 {
-	using TraverseFun = std::function<void(entt::entity)>;
-	//using TraverseUpdateFun = std::function<void(entt::entity, TransformComponent&)>;
-	//using TraverseRenderFun = std::function<void(entt::entity)>;
 
-	UserInterface::UserInterface(Scene* scene)
-		: m_Scene(scene)
+	UserInterface::UserInterface()
 	{
 		//m_Camera = sPtrCreate<Camera>(glm::vec3(100.0f, 100.0f, 100.0f));
 
@@ -26,7 +21,7 @@ namespace Yugo
 		//Dispatcher::Subscribe<KeyboardKeyPress>(this);
 		//Dispatcher::Subscribe<MouseScroll>(this);
 
-		auto cameraEntity = m_Scene->CreateEntity();
+		auto cameraEntity = CreateWidget();
 		auto& transform = cameraEntity.AddComponent<TransformComponent>();
 		auto& camera = cameraEntity.AddComponent<CameraComponent>();
 		auto& tag = cameraEntity.AddComponent<EntityTagComponent>();
@@ -66,7 +61,7 @@ namespace Yugo
 			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
 			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
 			{
-				auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent>();
+				auto view = m_Registry.view<SpriteComponent, TransformComponent>();
 				for (auto entity : view)
 				{
 					const auto& [sprite, transform] = view.get<SpriteComponent, TransformComponent>(entity);
@@ -83,7 +78,7 @@ namespace Yugo
 	{
 		// Pre-order traversal (recursive method)
 		TraverseFun traverse = [&](entt::entity entity) {
-			auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
+			auto view = m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
 			auto& [relationship, transform] = view.get<RelationshipComponent, TransformComponent>(entity);
 
 			transform.Position += transform.DeltaPosition;
@@ -95,7 +90,7 @@ namespace Yugo
 				traverse(child);
 		};
 
-		auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
+		auto view = m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
 		for (auto entity : view)
 		{
 			auto& relationship = view.get<RelationshipComponent>(entity);
@@ -111,34 +106,27 @@ namespace Yugo
 			std::queue<entt::entity> queue;
 			queue.push(entity);
 			
-			auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
+			auto view = m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
 
 			while (!queue.empty())
 			{
 				entity = queue.front();
 				queue.pop();
-				auto& [sprite, transform, relationship] = view.get<SpriteComponent, TransformComponent, RelationshipComponent>(entity);
 
-				auto view = m_Scene->m_Registry.view<CameraComponent, EntityTagComponent>();
-				for (auto entity : view)
+				auto [sprite, transform, relationship] = view.get<SpriteComponent, TransformComponent, RelationshipComponent>(entity);
+				auto& camera = GetCamera();
+
+				if (m_Registry.has<TextWidgetComponent>(entity))
 				{
-					auto& tag = m_Scene->GetComponent<EntityTagComponent>(entity);
-					if (tag.Name == "UI Camera")
-					{
-						auto& camera = view.get<CameraComponent>(entity);
-						if (m_Scene->m_Registry.has<TextWidgetComponent>(entity))
-						{
-							auto& text = m_Scene->m_Registry.get<TextWidgetComponent>(entity);
-							TextRenderer::Render(text, transform, camera, ResourceManager::GetShader("textShader"));
-						}
-						else
-						{
-							if (sprite.HasTexture)
-								SpriteRenderer::Render(sprite, transform, camera, ResourceManager::GetShader("uiTexturedShader"));
-							else
-								SpriteRenderer::Render(sprite, transform, camera, ResourceManager::GetShader("uiFlatColoredShader"));
-						}
-					}
+					auto& text = m_Registry.get<TextWidgetComponent>(entity);
+					TextRenderer::Render(text, transform, camera, ResourceManager::GetShader("textShader"));
+				}
+				else
+				{
+					if (sprite.HasTexture)
+						SpriteRenderer::Render(sprite, transform, camera, ResourceManager::GetShader("uiTexturedShader"));
+					else
+						SpriteRenderer::Render(sprite, transform, camera, ResourceManager::GetShader("uiFlatColoredShader"));
 				}
 
 				for (auto child : relationship.Children)
@@ -148,7 +136,7 @@ namespace Yugo
 			}
 		};
 
-		auto view = m_Scene->m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
+		auto view = m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
 		for (auto entity : view)
 			traverse(entity);
 	}
@@ -169,6 +157,17 @@ namespace Yugo
 	{
 		Widget widget = { m_Registry.create(), name, this };
 		return widget;
+	}
+
+	CameraComponent& UserInterface::GetCamera()
+	{
+		auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
+		for (auto entity : view)
+		{
+			auto& tag = view.get<EntityTagComponent>(entity);
+			if (tag.Name == "UI Camera")
+				return view.get<CameraComponent>(entity);
+		}
 	}
 
 }

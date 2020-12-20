@@ -32,6 +32,7 @@ namespace Yugo
 		uPtr<Window> m_MainWindow;
 		uPtr<Window> m_GameWindow; // Created as a second window when user clicks "Play Scene"
 		sPtr<Scene> m_Scene;
+		sPtr<UserInterface> m_UserInterface;
 		uPtr<ScriptEngine> m_ScriptEngine;
 
 		// Flags for Scene ImGui window inside editor
@@ -76,13 +77,13 @@ namespace Yugo
 
 		void ShowMenuBar();
 		void ShowProjectWindow();
-		void ShowInspectorWindow();
+		void ShowInspectorWindow(entt::registry& registry);
 		void ShowHierarchyWindow(entt::registry& registry);
 		void ShowSceneWindow();
 		void ShowImGuizmoWidget(TransformComponent& transform, const glm::mat4& projectionMatrix, const glm::mat4& viewMatrix);
 		void ShowFileDialogBox(const std::string& option, std::string& fullPath);
 		void ShowFolderMenuPopup(const std::string& folderPath);
-		void ShowHierarchyMenuPopup(entt::entity node);
+		void ShowHierarchyMenuPopup(entt::entity node, entt::registry& registry);
 
 		void CreateWidget(const std::string& name, entt::entity parent);
 		void CreateCanvasMatrixWidget(int dimensions[2], float padding[4], float cellWidgetSize[2], entt::entity parent);
