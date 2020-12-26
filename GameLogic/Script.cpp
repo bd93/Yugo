@@ -8,8 +8,6 @@
 namespace GameLogic
 {
 
-	//ScriptInterface* Script::s_ScriptInterface = nullptr;
-
 	/**
 	 * @brief Returns client scripts
 	 *
@@ -26,15 +24,10 @@ namespace GameLogic
 		return scripts;
 	}
 
-	//void Script::SetInterface(ScriptInterface* scriptInterface)
+	//void Script::SetGameObject(GameObject* gameObject)
 	//{
-	//	s_ScriptInterface = scriptInterface;
+	//	m_GameObject = gameObject;
 	//}
-
-	void Script::SetGameObject(GameObject* gameObject)
-	{
-		m_GameObject = gameObject;
-	}
 
 	const std::string& Script::GetScriptFilePath()
 	{
@@ -73,15 +66,10 @@ namespace GameLogic
 			}
 		}
 
-		//SCRIPT_API void SetScriptInterface(ScriptInterface* scriptInterface)
+		//SCRIPT_API void SetGameObject(GameObject* gameObject, Script* script)
 		//{
-		//	Script::SetInterface(scriptInterface);
+		//	script->SetGameObject(gameObject);
 		//}
-
-		SCRIPT_API void SetGameObject(GameObject* gameObject, Script* script)
-		{
-			script->SetGameObject(gameObject);
-		}
 
 		SCRIPT_API const char* GetScriptFilePath(Script* script)
 		{

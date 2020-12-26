@@ -1,8 +1,5 @@
 #pragma once
-#include "Interfaces/ScriptInterface.h"
 #include "GameObject.h"
-#include "Plane.h"
-#include "MouseRay.h"
 #include "YugoComponents.h"
 #include "YugoEvents.h"
 #include "Macros.h"
@@ -27,14 +24,14 @@ namespace GameLogic
 		virtual void OnEvent(const Yugo::Event& event) = 0;
 		virtual void OnShutdown() = 0;
 
-		void SetGameObject(GameObject* gameObject);
+		//void SetGameObject(GameObject* gameObject);
 		const std::string& GetScriptFilePath();
 
 		//static void SetInterface(ScriptInterface* scriptInterface);
 		static std::vector<Script*>& GetClientScripts();
 
 	protected:
-		GameObject* m_GameObject; // Game object which this script is attached to
+		//GameObject* m_GameObject; // Game object which this script is attached to
 		std::string m_ScriptFilePath;
 
 	private:

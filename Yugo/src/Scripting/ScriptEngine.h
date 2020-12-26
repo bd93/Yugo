@@ -3,11 +3,11 @@
 #include "Script.h"
 #include "Components.h"
 #include "GameObject.h"
-#include "ScriptInterfaceImpl.h"
-#include "GameObjectInterfaceImpl.h"
-#include "PlaneInterfaceImpl.h"
-#include "InputInterfaceImpl.h"
-#include "MouseRayInterfaceImpl.h"
+//#include "ScriptInterfaceImpl.h"
+//#include "GameObjectInterfaceImpl.h"
+//#include "PlaneInterfaceImpl.h"
+//#include "InputInterfaceImpl.h"
+//#include "MouseRayInterfaceImpl.h"
 
 #include <Windows.h>
 
@@ -17,16 +17,14 @@ namespace Yugo
 	// Function pointers which point to functions, imported from GameLogic.dll
 	typedef GameLogic::ScriptArray (*CreateScripts)();
 	typedef void (*DeleteScripts)(GameLogic::ScriptArray);
-	typedef GameLogic::GameObject* (*CreateGameObject)(entt::entity);
-	typedef void (*DeleteGameObject)(GameLogic::GameObject*);
+	//typedef void (*DeleteGameObject)(GameLogic::GameObject*);
 
 	typedef const char* (*GetScriptFilePath)(GameLogic::Script* script);
-	//typedef void (*SetScriptInterface)(ScriptInterfaceImpl*);
-	typedef void (*SetGameObject)(GameLogic::GameObject*, GameLogic::Script* script);
-	typedef void (*SetGameObjectInterface)(GameObjectInterfaceImpl*);
-	typedef void (*SetPlaneInterface)(PlaneInterfaceImpl*);
-	typedef void (*SetInputInterface)(InputInterfaceImpl*);
-	typedef void (*SetMouseRayInterface)(MouseRayInterfaceImpl*);
+	//typedef void (*SetGameObject)(GameLogic::GameObject*, GameLogic::Script* script);
+	//typedef void (*SetGameObjectInterface)(GameObjectInterfaceImpl*);
+	//typedef void (*SetPlaneInterface)(PlaneInterfaceImpl*);
+	//typedef void (*SetInputInterface)(InputInterfaceImpl*);
+	//typedef void (*SetMouseRayInterface)(MouseRayInterfaceImpl*);
 	
 	class Editor;
 
@@ -65,13 +63,11 @@ namespace Yugo
 		HINSTANCE m_Lib;
 		GameLogic::ScriptArray m_ScriptArray;
 		Scene* m_Scene;
-		std::vector<GameLogic::GameObject*> m_GameObjects;
+		//std::vector<GameLogic::GameObject*> m_GameObjects;
 		std::unordered_map<std::string, Entity> m_ScriptEntityMap;
-		//std::vector<ScriptInterfaceImpl*> m_ScriptInterfaceImpls;
-		GameObjectInterfaceImpl* m_GameObjectInterfaceImpl;
-		PlaneInterfaceImpl* m_PlaneInterfaceImpl;
-		InputInterfaceImpl* m_InputInterfaceImpl;
-		MouseRayInterfaceImpl* m_MouseRayInterfaceImpl;
-		//ScriptInterfaceImpl* m_ScriptInterfaceImpl;
+		//GameObjectInterfaceImpl* m_GameObjectInterfaceImpl;
+		//PlaneInterfaceImpl* m_PlaneInterfaceImpl;
+		//InputInterfaceImpl* m_InputInterfaceImpl;
+		//MouseRayInterfaceImpl* m_MouseRayInterfaceImpl;
 	};
 }
