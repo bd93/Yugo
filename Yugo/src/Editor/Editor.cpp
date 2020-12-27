@@ -847,8 +847,9 @@ namespace Yugo
 							auto& entityTagComponent = registry.get<EntityTagComponent>(m_SelectedSceneEntity);
 
 							scriptComponent.ScriptFilePath = scriptFilePath;
-							Entity entity(m_SelectedSceneEntity, entityTagComponent.Name, m_Scene.get());
-							m_ScriptEngine->AttachScript(scriptFilePath, entity);
+							//Entity entity(m_SelectedSceneEntity, entityTagComponent.Name, m_Scene.get());
+							//m_ScriptEngine->AttachScript(scriptFilePath, entity);
+							m_ScriptEngine->AttachScript(scriptFilePath, m_SelectedSceneEntity);
 						}
 
 						ImGui::Separator();

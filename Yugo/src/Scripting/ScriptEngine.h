@@ -9,6 +9,7 @@
 //#include "InputInterfaceImpl.h"
 //#include "MouseRayInterfaceImpl.h"
 
+
 #include <Windows.h>
 
 
@@ -16,15 +17,12 @@ namespace Yugo
 {
 	// Function pointers which point to functions, imported from GameLogic.dll
 	typedef GameLogic::ScriptArray (*CreateScripts)();
+	typedef GameLogic::GameObject* (*CreateGameObject)(entt::entity);
 	typedef void (*DeleteScripts)(GameLogic::ScriptArray);
-	//typedef void (*DeleteGameObject)(GameLogic::GameObject*);
-
+	typedef void (*DeleteGameObject)(GameLogic::GameObject*);
 	typedef const char* (*GetScriptFilePath)(GameLogic::Script* script);
-	//typedef void (*SetGameObject)(GameLogic::GameObject*, GameLogic::Script* script);
-	//typedef void (*SetGameObjectInterface)(GameObjectInterfaceImpl*);
-	//typedef void (*SetPlaneInterface)(PlaneInterfaceImpl*);
-	//typedef void (*SetInputInterface)(InputInterfaceImpl*);
-	//typedef void (*SetMouseRayInterface)(MouseRayInterfaceImpl*);
+	typedef void (*SetGameObject)(GameLogic::GameObject*, GameLogic::Script* script);
+	typedef void (*ImportGameEngineFuncs)(GameLogic::GameEngineFuncs);
 	
 	class Editor;
 
@@ -56,18 +54,15 @@ namespace Yugo
 		void OnStop();
 		void OnReload();
 
-		void AttachScript(const std::string& scriptFilePath, Entity& entity);
+		//void AttachScript(const std::string& scriptFilePath, Entity& entity);
+		void AttachScript(const std::string& scriptFilePath, entt::entity entity);
 		void SetScene(Scene* scene);
 
 	private:
 		HINSTANCE m_Lib;
 		GameLogic::ScriptArray m_ScriptArray;
 		Scene* m_Scene;
-		//std::vector<GameLogic::GameObject*> m_GameObjects;
-		std::unordered_map<std::string, Entity> m_ScriptEntityMap;
-		//GameObjectInterfaceImpl* m_GameObjectInterfaceImpl;
-		//PlaneInterfaceImpl* m_PlaneInterfaceImpl;
-		//InputInterfaceImpl* m_InputInterfaceImpl;
-		//MouseRayInterfaceImpl* m_MouseRayInterfaceImpl;
+		std::vector<GameLogic::GameObject*> m_GameObjects;
+		std::unordered_map<std::string, entt::entity> m_ScriptEntityMap;
 	};
 }

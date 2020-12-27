@@ -88,3 +88,38 @@
 //
 //}
 
+
+
+#include "pch.h"
+#include "Yugo.h"
+#include "PlayerScript.h"
+
+namespace GameLogic
+{
+	
+	void PlayerScript::OnStart()
+	{
+		auto& transform = m_GameObject.GetComponent<TransformComponent>();
+	}
+
+	void PlayerScript::OnUpdate(TimeStep ts)
+	{
+	}
+
+	void PlayerScript::OnEvent(const Event& event)
+	{
+		if (event.GetEventType() == EventType::MouseButtonPress)
+		{
+			//auto& cameraComponent = m_Camera.GetComponent<CameraComponent>();
+			//m_MouseRay.CastRay(cameraComponent);
+		}
+	}
+
+	void PlayerScript::OnShutdown()
+	{
+	}
+
+
+	REGISTER_CLASS(PlayerScript, __FILE__)
+
+}

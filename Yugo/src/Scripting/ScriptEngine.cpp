@@ -2,15 +2,12 @@
 
 #include "ScriptEngine.h"
 
+#include "EngineFuncs.h"
+
 
 namespace Yugo
 {
 
-	//ScriptEngine::ScriptEngine()
-	//	: m_Scene(nullptr),
-	//	m_GameObjectInterfaceImpl(nullptr),
-	//	m_PlaneInterfaceImpl(nullptr),
-	//	m_InputInterfaceImpl(nullptr)
 	ScriptEngine::ScriptEngine()
 		: m_Scene(nullptr)
 	{
@@ -41,57 +38,36 @@ namespace Yugo
 		CreateScripts NewScripts = (CreateScripts)GetProcAddress(m_Lib, "CreateScripts");
 		if (NewScripts == NULL)
 			std::cout << "Cannot load CreateScripts function!\n";
-		//CreateGameObject NewGameObject = (CreateGameObject)GetProcAddress(m_Lib, "CreateGameObject");
-		//if (NewGameObject == NULL)
-		//	std::cout << "Cannot load CreateGameObject function!\n";
+		CreateGameObject NewGameObject = (CreateGameObject)GetProcAddress(m_Lib, "CreateGameObject");
+		if (NewGameObject == NULL)
+			std::cout << "Cannot load CreateGameObject function!\n";
 		GetScriptFilePath ScriptFilePath = (GetScriptFilePath)GetProcAddress(m_Lib, "GetScriptFilePath");
 		if (ScriptFilePath == NULL)
 			std::cout << "Cannot load GetScriptFilePath function!\n";
-		//SetGameObject SetScriptGameObject = (SetGameObject)GetProcAddress(m_Lib, "SetGameObject");
-		//if (SetScriptGameObject == NULL)
-		//	std::cout << "Cannot load SetGameObject function!\n";
-		//SetGameObjectInterface SetGameObjectInterfaceImpl = (SetGameObjectInterface)GetProcAddress(m_Lib, "SetGameObjectInterface");
-		//if (SetGameObjectInterfaceImpl == NULL)
-		//	std::cout << "Cannot load SetGameObjectInterface function!\n";
-		//SetPlaneInterface SetPlaneInterfaceImpl = (SetPlaneInterface)GetProcAddress(m_Lib, "SetPlaneInterface");
-		//if (SetPlaneInterfaceImpl == NULL)
-		//	std::cout << "Cannot load SetPlaneInterface function!\n";
-		//SetInputInterface SetInputInterfaceImpl = (SetInputInterface)GetProcAddress(m_Lib, "SetInputInterface");
-		//if (SetInputInterfaceImpl == NULL)
-		//	std::cout << "Cannot load SetInputInterface function!\n";
-		//SetMouseRayInterface SetMouseRayInterfaceImpl = (SetMouseRayInterface)GetProcAddress(m_Lib, "SetMouseRayInterface");
-		//if (SetMouseRayInterfaceImpl == NULL)
-		//	std::cout << "Cannot load SetMouseRayInterface function!\n";
+		SetGameObject SetScriptGameObject = (SetGameObject)GetProcAddress(m_Lib, "SetGameObject");
+		if (SetScriptGameObject == NULL)
+			std::cout << "Cannot load SetGameObject function!\n";
+		ImportGameEngineFuncs SetGameEngineFuncs = (ImportGameEngineFuncs)GetProcAddress(m_Lib, "ImportGameEngineFuncs");
+		if (SetGameEngineFuncs == NULL)
+			std::cout << "Cannot load ImportGameEngineFuncs function!\n";
+
+		GameLogic::GameEngineFuncs gameEngineFuncs;
+		gameEngineFuncs.GetTransformComponent = std::bind(&Scene::template GetComponent<TransformComponent>, m_Scene, std::placeholders::_1);
+		SetGameEngineFuncs(gameEngineFuncs);
 
 		m_ScriptArray = NewScripts();
 
 		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
 		{
-			Entity& entity = m_ScriptEntityMap[ScriptFilePath(m_ScriptArray.Scripts[i])];
-			auto& scriptComponent = m_Scene->GetComponent<ScriptComponent>(entity.GetEnttEntity());
-			scriptComponent.ClientScript = m_ScriptArray.Scripts[i]; // Shallow copy, consider if this will be a problem in the future!
+			//Entity& entity = m_ScriptEntityMap[ScriptFilePath(m_ScriptArray.Scripts[i])];
+			auto entity = m_ScriptEntityMap[ScriptFilePath(m_ScriptArray.Scripts[i])];
+			auto& scriptComponent = m_Scene->GetComponent<ScriptComponent>(entity);
+			scriptComponent.ClientScript = m_ScriptArray.Scripts[i];
 
-			//GameLogic::GameObject* gameObject = NewGameObject(entity.GetEnttEntity());
-			//SetScriptGameObject(gameObject, m_ScriptArray.Scripts[i]);
-			//m_GameObjects.push_back(gameObject);
+			GameLogic::GameObject* gameObject = NewGameObject(entity);
+			m_GameObjects.push_back(gameObject);
+			SetScriptGameObject(gameObject, m_ScriptArray.Scripts[i]);
 		}
-
-		//GameObjectInterfaceImpl* gameObjectInterfaceImpl = new GameObjectInterfaceImpl();
-		//gameObjectInterfaceImpl->SetScene(m_Scene);
-		//SetGameObjectInterfaceImpl(gameObjectInterfaceImpl);
-		//m_GameObjectInterfaceImpl = gameObjectInterfaceImpl;
-
-		//PlaneInterfaceImpl* planeInterfaceImpl = new PlaneInterfaceImpl();
-		//SetPlaneInterfaceImpl(planeInterfaceImpl);
-		//m_PlaneInterfaceImpl = planeInterfaceImpl;
-
-		//InputInterfaceImpl* inputInterfaceImpl = new InputInterfaceImpl();
-		//SetInputInterfaceImpl(inputInterfaceImpl);
-		//m_InputInterfaceImpl = inputInterfaceImpl;
-
-		//MouseRayInterfaceImpl* mouseRayInterfaceImpl = new MouseRayInterfaceImpl();
-		//SetMouseRayInterfaceImpl(mouseRayInterfaceImpl);
-		//m_MouseRayInterfaceImpl = mouseRayInterfaceImpl;
 
 		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
 			m_ScriptArray.Scripts[i]->OnStart();
@@ -125,24 +101,16 @@ namespace Yugo
 	 */
 	void ScriptEngine::OnStop()
 	{
-		//DeleteGameObject DestroyGameObject = (DeleteGameObject)GetProcAddress(m_Lib, "DeleteGameObject");
-		//if (DestroyGameObject == NULL)
-		//	std::cout << "Cannot load DeleteGameObject function!\n";
+		DeleteGameObject DestroyGameObject = (DeleteGameObject)GetProcAddress(m_Lib, "DeleteGameObject");
+		if (DestroyGameObject == NULL)
+			std::cout << "Cannot load DeleteGameObject function!\n";
 
-		//for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
-		//{
-		//	DestroyGameObject(m_GameObjects[i]);
-		//}
-		//delete m_PlaneInterfaceImpl;
-		//delete m_InputInterfaceImpl;
-		//delete m_GameObjectInterfaceImpl;
-		//delete m_MouseRayInterfaceImpl;
+		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
+		{
+			DestroyGameObject(m_GameObjects[i]);
+		}
 
-		//m_GameObjects.clear();
-		//m_PlaneInterfaceImpl = nullptr;
-		//m_InputInterfaceImpl = nullptr;
-		//m_GameObjectInterfaceImpl = nullptr;
-		//m_MouseRayInterfaceImpl = nullptr;
+		m_GameObjects.clear();
 
 		DeleteScripts DestroyScripts = (DeleteScripts)GetProcAddress(m_Lib, "DeleteScripts");
 		if (DestroyScripts == NULL)
@@ -166,7 +134,7 @@ namespace Yugo
 	 * @param scriptFilePath Path to script file.
 	 * @param entity Custom entity which holds entt::entity, name and pointer to scene.
 	 */
-	void ScriptEngine::AttachScript(const std::string& scriptFilePath, Entity& entity)
+	void ScriptEngine::AttachScript(const std::string& scriptFilePath, entt::entity entity)
 	{
 		if (m_ScriptEntityMap.find(scriptFilePath) == m_ScriptEntityMap.end())
 			m_ScriptEntityMap[scriptFilePath] = entity;

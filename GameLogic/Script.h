@@ -2,7 +2,8 @@
 #include "GameObject.h"
 #include "YugoComponents.h"
 #include "YugoEvents.h"
-#include "Macros.h"
+#include "Common.h"
+
 
 namespace GameLogic
 {
@@ -24,7 +25,7 @@ namespace GameLogic
 		virtual void OnEvent(const Yugo::Event& event) = 0;
 		virtual void OnShutdown() = 0;
 
-		//void SetGameObject(GameObject* gameObject);
+		void SetGameObject(GameObject* gameObject);
 		const std::string& GetScriptFilePath();
 
 		//static void SetInterface(ScriptInterface* scriptInterface);
@@ -32,6 +33,7 @@ namespace GameLogic
 
 	protected:
 		//GameObject* m_GameObject; // Game object which this script is attached to
+		GameObject m_GameObject; // Game object which this script is attached to
 		std::string m_ScriptFilePath;
 
 	private:

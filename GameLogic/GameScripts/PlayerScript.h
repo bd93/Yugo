@@ -29,3 +29,24 @@
 //	};
 //
 //}
+
+
+#pragma once
+#include "Script.h"
+
+
+namespace GameLogic
+{
+
+	class PlayerScript : public Script
+	{
+	public:
+		PlayerScript();
+
+		void OnStart() override;
+		void OnUpdate(TimeStep ts) override;
+		void OnEvent(const Event& event) override;
+		void OnShutdown() override;
+	};
+
+}

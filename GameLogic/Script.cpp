@@ -2,9 +2,6 @@
 #include "Script.h"
 
 
-#define SCRIPT_API __declspec(dllexport)
-
-
 namespace GameLogic
 {
 
@@ -24,10 +21,10 @@ namespace GameLogic
 		return scripts;
 	}
 
-	//void Script::SetGameObject(GameObject* gameObject)
-	//{
-	//	m_GameObject = gameObject;
-	//}
+	void Script::SetGameObject(GameObject* gameObject)
+	{
+		m_GameObject = *gameObject;
+	}
 
 	const std::string& Script::GetScriptFilePath()
 	{
@@ -66,10 +63,10 @@ namespace GameLogic
 			}
 		}
 
-		//SCRIPT_API void SetGameObject(GameObject* gameObject, Script* script)
-		//{
-		//	script->SetGameObject(gameObject);
-		//}
+		SCRIPT_API void SetGameObject(GameObject* gameObject, Script* script)
+		{
+			script->SetGameObject(gameObject);
+		}
 
 		SCRIPT_API const char* GetScriptFilePath(Script* script)
 		{
