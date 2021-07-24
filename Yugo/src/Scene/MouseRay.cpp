@@ -34,9 +34,9 @@ namespace Yugo
 
 		if (info != nullptr)
 		{
-			info->MouseRayOrigin = glm::vec3(worldCoords.x, worldCoords.y, worldCoords.z);
-			info->MouseRayDirection = camera.Direction;
-			info->MouseEyeSpaceCoords = glm::vec3(eyeCoords.x, eyeCoords.y, 0.0f);
+			info->MouseRayOrigin = s_MouseRayOrigin;
+			info->MouseRayDirection = s_MouseRayDirection;
+			info->MouseEyeSpaceCoords = s_MouseEyeSpaceCoords;
 		}
 	}
 

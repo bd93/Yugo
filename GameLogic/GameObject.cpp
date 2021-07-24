@@ -6,56 +6,45 @@
 namespace GameLogic
 {
 
-	//GameObjectInterface* GameObject::s_GameObjectInterface = nullptr;
-
 	void GameObject::SetEntity(entt::entity entity)
 	{
 		m_Entity = entity;
 	}
 
-	///* @brief Returns game objects with given tag name. */
-	//std::vector<GameObject> GameObject::FindGameObjectsWithTag(const std::string& tagName)
-	//{
-	//	std::vector<GameObject> gameObjects; // TODO: If this function is going to be used frequently (e.g. in OnUpdate()), then refactor this!
+	GameObject GameObject::FindGameObjectWithTagName(const std::string& tagName)
+	{
+		auto gameObjects = FindGameObjectsWithComponent<EntityTagComponent>();
 
-	//	auto scene = s_GameObjectInterface->GetScene();
+		for (auto& gameObject : gameObjects)
+		{
+			if (gameObject.GetComponent<EntityTagComponent>().Name == tagName)
+				return gameObject;
+		}
+	}
 
-	//	auto& entities = s_GameObjectInterface->GetEntitiesWithEntityTagComponent();
-	//	for (auto& entity : entities)
-	//	{
-	//		GameObject gameObject;
-	//		gameObject.SetEntity(entity);
-	//		auto& entityTagComponent = gameObject.GetComponent<EntityTagComponent>();
+	std::vector<GameObject> GameObject::GetGameObjectsWithComponent(std::function<std::vector<entt::entity>(void)> findEntities)
+	{
+		std::vector<GameObject> gameObjects;
 
-	//		if (entityTagComponent.Name == tagName)
-	//			gameObjects.push_back(gameObject);
-	//	}
+		auto& entities = findEntities();
+		for (auto entity : entities)
+		{
+			GameObject gameObject;
+			gameObject.SetEntity(entity);
+			gameObjects.push_back(gameObject);
+		}
+		return gameObjects;
+	}
 
-	//	return gameObjects;
-	//}
+	GameObject GameObject::GetGameObjectWithComponent(std::function<entt::entity(void)> findEntities)
+	{
+		auto entity = findEntities();
 
-	///* @brief Returns first game object with given tag name. */
-	//GameObject GameObject::FindGameObjectWithTag(const std::string& tagName)
-	//{
-	//	GameObject gameObject;
+		GameObject gameObject;
+		gameObject.SetEntity(entity);
 
-	//	auto scene = s_GameObjectInterface->GetScene();
-	//	auto& entities = s_GameObjectInterface->GetEntitiesWithEntityTagComponent();
-	//	for (auto& entity : entities)
-	//	{
-	//		auto& entityTagComponent = s_GameObjectInterface->GetEntityTagComponent(entity);
-
-	//		if (entityTagComponent.Name == tagName)
-	//			gameObject.SetEntity(entity);
-	//	}
-
-	//	return gameObject;
-	//}
-
-	//void GameObject::SetInterface(GameObjectInterface* gameObjectInterface)
-	//{
-	//	s_GameObjectInterface = gameObjectInterface;
-	//}
+		return gameObject;
+	}
 
 
 	extern "C"
@@ -85,11 +74,6 @@ namespace GameLogic
 		{
 			delete gameObject;
 		}
-
-		//SCRIPT_API void SetGameObjectInterface(GameObjectInterface* gameObjectInterface)
-		//{
-		//	GameObject::SetInterface(gameObjectInterface);
-		//}
 	}
 
 }

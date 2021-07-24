@@ -10,6 +10,7 @@ class Engine : public Yugo::Application
 
 int main()
 {
-	Engine engine;
-	engine.Run();
+	Engine* engine = new Engine();
+	engine->Run();
+	delete engine;
 }

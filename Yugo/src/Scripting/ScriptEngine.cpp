@@ -1,8 +1,8 @@
 #include "pch.h"
 
 #include "ScriptEngine.h"
-
-#include "EngineFuncs.h"
+#include "Input/UserInput.h"
+//#include "EngineFuncs.h"
 
 
 namespace Yugo
@@ -20,7 +20,7 @@ namespace Yugo
 	 * Then it creates interface implementations and sets it in client scripts and game objects.
 	 * It also pushes interfaces and game objects to vectors in order to destroy them when OnStop method is called. 
 	 */
-	void Yugo::ScriptEngine::OnStart(Scene* scene)
+	void Yugo::ScriptEngine::OnStart(Scene* scene, Window* window)
 	{
 #ifdef YU_RELEASE
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
@@ -30,6 +30,7 @@ namespace Yugo
 #endif
 
 		m_Scene = scene;
+		m_Window = window;
 
 		m_Lib = LoadLibrary(L"GameLogic.dll");
 		if (m_Lib == NULL)
@@ -52,7 +53,9 @@ namespace Yugo
 			std::cout << "Cannot load ImportGameEngineFuncs function!\n";
 
 		GameLogic::GameEngineFuncs gameEngineFuncs;
-		gameEngineFuncs.GetTransformComponent = std::bind(&Scene::template GetComponent<TransformComponent>, m_Scene, std::placeholders::_1);
+
+		BindGameEngineFunctionalities(gameEngineFuncs);
+
 		SetGameEngineFuncs(gameEngineFuncs);
 
 		m_ScriptArray = NewScripts();
@@ -84,13 +87,53 @@ namespace Yugo
 	void ScriptEngine::OnEvent(const Event& event)
 	{
 		for (uint32_t i = 0; i < m_ScriptArray.Size; ++i)
-			m_ScriptArray.Scripts[i]->OnEvent(event);
-	}
-
-	/* @brief Calls OnShutdown each frame in each client's script. */
-	void Yugo::ScriptEngine::OnShutdown()
-	{
-		// TODO: Implement case when user close window without clicking on "play scene" and "stop scene" buttons
+		{
+			auto eventType = event.GetEventType();
+			
+			switch (eventType)
+			{
+			case EventType::KeyboardKeyPress:
+				break;
+			case EventType::KeyboardKeyRelease:
+				break;
+			case EventType::MouseButtonPress:
+			{
+				const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
+				if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
+					m_ScriptArray.Scripts[i]->OnMouseLeftClick();
+				if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_RIGHT)
+					m_ScriptArray.Scripts[i]->OnMouseRightClick();
+				break;
+			}
+			case EventType::MouseButtonRelease:
+			{
+				const auto& mouseButtonRelease = static_cast<const MouseButtonRelease&>(event);
+				if (mouseButtonRelease.GetButtonCode() == MOUSE_BUTTON_LEFT)
+					m_ScriptArray.Scripts[i]->OnMouseLeftRelease();
+				if (mouseButtonRelease.GetButtonCode() == MOUSE_BUTTON_RIGHT)
+					m_ScriptArray.Scripts[i]->OnMouseRightRelease();
+				break;
+			}
+			case EventType::MouseScroll:
+				break;
+			case EventType::MouseMove:
+				break;
+			case EventType::WindowClose:
+				break;
+			case EventType::WindowResize:
+				break;
+			case EventType::WindowFocus:
+				break;
+			case EventType::WindowLostFocus:
+				break;
+			case EventType::WindowMove:
+				break;
+			case EventType::ImportAsset:
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	/**
@@ -116,7 +159,7 @@ namespace Yugo
 		if (DestroyScripts == NULL)
 			std::cout << "Cannot load DeleteScripts function!\n";
 		DestroyScripts(m_ScriptArray);
-		
+				
 		FreeLibrary(m_Lib);
 	}
 
@@ -144,6 +187,81 @@ namespace Yugo
 	void ScriptEngine::SetScene(Scene* scene)
 	{
 		m_Scene = scene;
+	}
+
+	void ScriptEngine::BindGameEngineFunctionalities(GameLogic::GameEngineFuncs& gameEngineFuncs)
+	{
+		gameEngineFuncs.IsKeyboardKeyPressed = UserInput::IsKeyboardKeyPressed;
+		gameEngineFuncs.IsMouseButtonPressed = UserInput::IsMouseButtonPressed;
+
+		gameEngineFuncs.GetWindowWidth = [this]() {return m_Window->GetWindowWidth(); };
+		gameEngineFuncs.GetWindowHeight = [this]() {return m_Window->GetWindowHeight(); };
+
+		gameEngineFuncs.GetMousePosX = UserInput::GetMousePosX;
+		gameEngineFuncs.GetMousePosY = UserInput::GetMousePosY;
+
+		gameEngineFuncs.GetMousePosition = UserInput::GetMousePosition;
+		gameEngineFuncs.GetWindowSize = [this]() {return m_Window->GetWindowSize(); };
+
+		gameEngineFuncs.CalculateRayOrigin = MouseRay::CalculateRayOrigin;
+		gameEngineFuncs.CheckCollisionWithMesh = MouseRay::CheckCollisionWithMesh;
+		gameEngineFuncs.CheckCollisionWithPlane = MouseRay::CheckCollisionWithPlane;
+
+		//gameEngineFuncs.HasTransformComponent = std::bind(&Scene::template HasComponent<TransformComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.HasMeshComponent = std::bind(&Scene::template HasComponent<MeshComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.HasSpriteComponent = std::bind(&Scene::template HasComponent<SpriteComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.HasAnimationComponent = std::bind(&Scene::template HasComponent<AnimationComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.HasEntityTagComponent = std::bind(&Scene::template HasComponent<EntityTagComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.HasCameraComponent = std::bind(&Scene::template HasComponent<CameraComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.HasScriptComponent = std::bind(&Scene::template HasComponent<ScriptComponent>, m_Scene, std::placeholders::_1);
+
+		//gameEngineFuncs.GetTransformComponent = std::bind(&Scene::template GetComponent<TransformComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.GetMeshComponent = std::bind(&Scene::template GetComponent<MeshComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.GetSpriteComponent = std::bind(&Scene::template GetComponent<SpriteComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.GetAnimationComponent = std::bind(&Scene::template GetComponent<AnimationComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.GetEntityTagComponent = std::bind(&Scene::template GetComponent<EntityTagComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.GetCameraComponent = std::bind(&Scene::template GetComponent<CameraComponent>, m_Scene, std::placeholders::_1);
+		//gameEngineFuncs.GetScriptComponent = std::bind(&Scene::template GetComponent<ScriptComponent>, m_Scene, std::placeholders::_1);
+
+		gameEngineFuncs.HasTransformComponent = [this](entt::entity entity) { return m_Scene->HasComponent<TransformComponent>(entity); };
+		gameEngineFuncs.HasMeshComponent = [this](entt::entity entity) { return m_Scene->HasComponent<MeshComponent>(entity); };
+		gameEngineFuncs.HasSpriteComponent = [this](entt::entity entity) { return m_Scene->HasComponent<SpriteComponent>(entity); };
+		gameEngineFuncs.HasAnimationComponent = [this](entt::entity entity) { return m_Scene->HasComponent<AnimationComponent>(entity); };
+		gameEngineFuncs.HasEntityTagComponent = [this](entt::entity entity) { return m_Scene->HasComponent<EntityTagComponent>(entity); };
+		gameEngineFuncs.HasCameraComponent = [this](entt::entity entity) { return m_Scene->HasComponent<CameraComponent>(entity); };
+		gameEngineFuncs.HasScriptComponent = [this](entt::entity entity) { return m_Scene->HasComponent<ScriptComponent>(entity); };
+
+		gameEngineFuncs.GetTransformComponent = [this](entt::entity entity) -> auto& { return m_Scene->GetComponent<TransformComponent>(entity); };
+		gameEngineFuncs.GetMeshComponent = [this](entt::entity entity) -> auto& { return m_Scene->GetComponent<MeshComponent>(entity); };
+		gameEngineFuncs.GetSpriteComponent = [this](entt::entity entity) -> auto& { return m_Scene->GetComponent<SpriteComponent>(entity); };
+		gameEngineFuncs.GetAnimationComponent = [this](entt::entity entity) -> auto& { return m_Scene->GetComponent<AnimationComponent>(entity); };
+		gameEngineFuncs.GetEntityTagComponent = [this](entt::entity entity) -> auto& { return m_Scene->GetComponent<EntityTagComponent>(entity); };
+		gameEngineFuncs.GetCameraComponent = [this](entt::entity entity) -> auto& { return m_Scene->GetComponent<CameraComponent>(entity); };
+		gameEngineFuncs.GetScriptComponent = [this](entt::entity entity) -> auto& { return m_Scene->GetComponent<ScriptComponent>(entity); };
+
+		gameEngineFuncs.FindEntitiesWithTransformComponent = [this]() -> auto& {return m_Scene->FindEntitiesWithComponent<TransformComponent>(); };
+		gameEngineFuncs.FindEntitiesWithMeshComponent = [this]() -> auto& {return m_Scene->FindEntitiesWithComponent<MeshComponent>(); };
+		gameEngineFuncs.FindEntitiesWithSpriteComponent = [this]() -> auto& {return m_Scene->FindEntitiesWithComponent<SpriteComponent>(); };
+		gameEngineFuncs.FindEntitiesWithAnimationComponent = [this]() -> auto& {return m_Scene->FindEntitiesWithComponent<AnimationComponent>(); };
+		gameEngineFuncs.FindEntitiesWithEntityTagComponent = [this]() -> auto& {return m_Scene->FindEntitiesWithComponent<EntityTagComponent>(); };
+		gameEngineFuncs.FindEntitiesWithCameraComponent = [this]() -> auto& {return m_Scene->FindEntitiesWithComponent<CameraComponent>(); };
+		gameEngineFuncs.FindEntitiesWithScriptComponent = [this]() -> auto& {return m_Scene->FindEntitiesWithComponent<ScriptComponent>(); };
+
+		gameEngineFuncs.FindEntityWithTransformComponent = [this]() {return m_Scene->FindEntityWithComponent<TransformComponent>(); };
+		gameEngineFuncs.FindEntityWithMeshComponent = [this]() {return m_Scene->FindEntityWithComponent<MeshComponent>(); };
+		gameEngineFuncs.FindEntityWithSpriteComponent = [this]() {return m_Scene->FindEntityWithComponent<SpriteComponent>(); };
+		gameEngineFuncs.FindEntityWithAnimationComponent = [this]() {return m_Scene->FindEntityWithComponent<AnimationComponent>(); };
+		gameEngineFuncs.FindEntityWithEntityTagComponent = [this]() {return m_Scene->FindEntityWithComponent<EntityTagComponent>(); };
+		gameEngineFuncs.FindEntityWithCameraComponent = [this]() {return m_Scene->FindEntityWithComponent<CameraComponent>(); };
+		gameEngineFuncs.FindEntityWithScriptComponent = [this]() {return m_Scene->FindEntityWithComponent<ScriptComponent>(); };
+
+		gameEngineFuncs.GetTransformComponentsInChildren = [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<TransformComponent>(entity); };
+		gameEngineFuncs.GetMeshComponentsInChildren = [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<MeshComponent>(entity); };
+		gameEngineFuncs.GetSpriteComponentsInChildren = [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<SpriteComponent>(entity); };
+		gameEngineFuncs.GetAnimationComponentsInChildren = [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<AnimationComponent>(entity); };
+		gameEngineFuncs.GetEntityTagComponentsInChildren= [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<EntityTagComponent>(entity); };
+		gameEngineFuncs.GetCameraComponentsInChildren = [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<CameraComponent>(entity); };
+		gameEngineFuncs.GetScriptComponentsInChildren = [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<ScriptComponent>(entity); };
 	}
 
 }

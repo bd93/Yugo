@@ -12,4 +12,5 @@ namespace GameLogic
 	using KeyboardKeyPress = Yugo::KeyboardKeyPress;
 	using KeyCode = Yugo::KeyCode;
 	using MouseCode = Yugo::MouseCode;
+
 }

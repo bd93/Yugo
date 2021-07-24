@@ -9,8 +9,6 @@
 namespace Yugo
 {
 
-	//GLFWwindow* Window::s_GLFWwindow = NULL;
-	
 	Window::Window(const std::string& windowName, int width, int height)
 		: m_GLFWwindow(nullptr),
 		m_WindowName(windowName),
@@ -113,6 +111,8 @@ namespace Yugo
 			std::cout << "Failed to create GLFW window" << std::endl;
 			glfwTerminate();
 		}
+
+		glfwSetWindowUserPointer(m_GLFWwindow, reinterpret_cast<void*>(this));
 	}
 
 	void Window::ShowWindow()
@@ -120,13 +120,38 @@ namespace Yugo
 		glfwShowWindow(m_GLFWwindow);
 	}
 
+	int const Window::GetWindowWidth()
+	{
+		return m_Width;
+	}
+
+	int const Window::GetWindowHeight()
+	{
+		return m_Height;
+	}
+
+	std::pair<int, int> Window::GetWindowSize()
+	{
+		return { m_Width, m_Height };
+	}
+
 	void Window::SetEventCallbacks()
 	{
+		glfwSetWindowSizeCallback(m_GLFWwindow, [](GLFWwindow* window, int width, int height)
+			{
+				WindowResize resizeEvent{ width, height };
+				Dispatcher::Publish<WindowResize>(resizeEvent);
+				Window* mainWindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+				mainWindow->m_Width = width;
+				mainWindow->m_Height = height;
+			}
+		);
+
 		glfwSetFramebufferSizeCallback(m_GLFWwindow, [](GLFWwindow* window, int width, int height)
 			{
 				glViewport(0, 0, width, height);
-				WindowResize resizeEvent{ width, height };
-				Dispatcher::Publish<WindowResize>(resizeEvent);
+				//WindowResize resizeEvent{ width, height };
+				//Dispatcher::Publish<WindowResize>(resizeEvent);
 			}
 		);
 
@@ -170,6 +195,8 @@ namespace Yugo
 
 	void Window::RemoveEventCallbacks()
 	{
+		glfwSetWindowSizeCallback(m_GLFWwindow, NULL);
+
 		glfwSetFramebufferSizeCallback(m_GLFWwindow, NULL);
 
 		glfwSetKeyCallback(m_GLFWwindow, NULL);

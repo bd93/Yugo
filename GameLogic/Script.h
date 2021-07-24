@@ -3,6 +3,7 @@
 #include "YugoComponents.h"
 #include "YugoEvents.h"
 #include "Common.h"
+#include "Input.h"
 
 
 namespace GameLogic
@@ -20,24 +21,24 @@ namespace GameLogic
 	public:
 		virtual ~Script() {}
 
-		virtual void OnStart() = 0;
-		virtual void OnUpdate(TimeStep ts) = 0;
-		virtual void OnEvent(const Yugo::Event& event) = 0;
-		virtual void OnShutdown() = 0;
+		virtual void OnStart() {};
+		virtual void OnUpdate(TimeStep ts) {};
+
+		// Events (messages)
+		virtual void OnMouseLeftClick() {}
+		virtual void OnMouseLeftRelease() {}
+		virtual void OnMouseRightClick() {}
+		virtual void OnMouseRightRelease() {}
+		virtual void OnMouseOver() {}
+		virtual void OnMouseExit() {}
 
 		void SetGameObject(GameObject* gameObject);
 		const std::string& GetScriptFilePath();
-
-		//static void SetInterface(ScriptInterface* scriptInterface);
 		static std::vector<Script*>& GetClientScripts();
 
 	protected:
-		//GameObject* m_GameObject; // Game object which this script is attached to
 		GameObject m_GameObject; // Game object which this script is attached to
 		std::string m_ScriptFilePath;
-
-	private:
-		//static ScriptInterface* s_ScriptInterface;
 	};
 
 	/**

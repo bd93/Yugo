@@ -34,6 +34,10 @@ namespace Yugo
 		void CreateGLFWwindow(GLFWmonitor* monitor, GLFWwindow* share);
 		void ShowWindow();
 
+		int const GetWindowWidth();
+		int const GetWindowHeight();
+		std::pair<int, int> GetWindowSize();
+
 		static void InitGLFW();
 		static void Hint(int hint, int value);
 		static void PollEvents();
@@ -48,6 +52,7 @@ namespace Yugo
 
 		GLFWwindow* m_GLFWwindow;
 		std::string m_WindowName;
+
 		int m_Width;
 		int m_Height;
 		

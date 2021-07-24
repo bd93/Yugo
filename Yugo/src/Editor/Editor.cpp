@@ -264,7 +264,7 @@ namespace Yugo
 			// The order of update is important! If scene is updated first, then script can't execute entity movement
 			Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
 			m_ScriptEngine->OnUpdate(ts);
-			m_Scene->OnUpdate(ts);
+			m_GameWindow->m_Scene->OnUpdate(ts);
 			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 		}
 		else
@@ -324,10 +324,8 @@ namespace Yugo
 				{
 					if (!ImGuizmo::IsOver(s_CurrentGizmoOperation) && m_IsSceneWindowHovered)
 					{
-						auto& camera = m_Scene->GetCamera();
-						MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 						SelectMesh();
-						Camera::ResetMousePositionOffset(camera);
+						Camera::ResetMousePositionOffset(m_Scene->GetCamera());
 					}
 				}
 			}
@@ -363,7 +361,7 @@ namespace Yugo
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 
-		m_ScriptEngine->OnShutdown();
+		//m_ScriptEngine->OnShutdown();
 		m_Scene->OnShutdown();
 		m_MainWindow->OnShutdown();
 		Window::TerminateGLFW();
@@ -1183,8 +1181,7 @@ namespace Yugo
 				m_SelectedSceneEntity = entt::null;
 
 			CreateGameWindow();
-
-			m_ScriptEngine->OnStart(m_GameWindow->m_Scene.get());
+			m_ScriptEngine->OnStart(m_GameWindow->m_Scene.get(), m_GameWindow.get());
 		}
 
 		ImGui::SameLine();
@@ -1742,6 +1739,12 @@ namespace Yugo
 		traverse(node, copyNode);
 	}
 
+	/**
+	 * @brief Create second window for "play" mode.
+	 *
+	 * This method creates second window, when user clicks "Play" button.
+	 * This window will render the final look of a game, together with in-game UI.
+	 */
 	void Editor::CreateGameWindow()
 	{
 		Window::Hint(GLFW_DECORATED, true);
@@ -1799,6 +1802,11 @@ namespace Yugo
 		Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 	}
 
+	/**
+	 * @brief Create a frame buffer.
+	 *
+	 * This method creates frame buffer, which will be used for Scene window in editor.
+	 */
 	void Editor::CreateFrameBuffer(int width, int height)
 	{
 		m_FrameBuffer = sPtrCreate<FrameBuffer>();
@@ -1824,16 +1832,32 @@ namespace Yugo
 		m_IntermediateFrameBuffer->Unbind();
 	}
 
+	/**
+	 * @brief Bind frame buffer.
+	 *
+	 * Frame buffer is bound before Scene rendering.
+	 */
 	void Editor::BindFrameBuffer()
 	{
 		m_FrameBuffer->Bind();
 	}
 
+	/**
+	 * @brief Unbind frame buffer.
+	 *
+	 * Frame buffer is unbound after Scene rendering is done.
+	 */
 	void Editor::UnbindFrameBuffer()
 	{
 		m_FrameBuffer->Unbind();
 	}
 
+	/**
+	 * @brief Import asset in Scene window
+	 *
+	 * Asset is imported on drag'n'drop.
+	 * Asset could be found in Project windo, in editor.
+	 */
 	void Editor::ImportAsset(const std::string& importAssetFilePath)
 	{
 		auto& [loadedMesh, loadedAnimation] = ModelImporter::LoadMeshFile(importAssetFilePath);
@@ -1869,8 +1893,17 @@ namespace Yugo
 		MeshRenderer::Submit(mesh);
 	}
 
+	/**
+	 * @brief Select mesh on left click
+	 *
+	 * Mesh is selected when user clicks on it in Scene window.
+	 * Editor will keep track of the selected entity ID, which is of the type entt::entity.
+	 */
 	void Editor::SelectMesh()
 	{
+		auto& camera = m_Scene->GetCamera();
+		MouseRay::CalculateRayOrigin(camera, m_MouseInfo.MousePosX, m_MouseInfo.MousePosY, m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
+
 		auto view = m_Scene->m_Registry.view<MeshComponent, TransformComponent, BoundBoxComponent>();
 
 		bool isAnyMeshSelected = false;
@@ -1880,10 +1913,10 @@ namespace Yugo
 		{
 			const auto& [mesh, transform] = view.get<MeshComponent, TransformComponent>(entity);
 
-			// Check if mouse ray intersects mesh (model)
+			// Check if mouse ray intersects AABB of a mesh
 			if (MouseRay::CheckCollisionWithBox(mesh, transform))
 			{
-				// Check if mouse ray intersects any triangle in mesh
+				// Check if mouse ray intersects any mesh triangle
 				if (MouseRay::CheckCollisionWithMesh(mesh, transform))
 				{
 					isAnyMeshSelected = true;
@@ -1917,8 +1950,11 @@ namespace Yugo
 		}
 	}
 
-
-	// This method resizes framebuffer according to ImGui scene window's size and it also updates viewport (glViewport function)
+	/**
+	 * @brief Update Scene texture when Scene window is resized.
+	 *
+	 * This method resizes framebuffer according to Scene window size and it also updates viewport (glViewport function).
+	 */
 	void Editor::UpdateSceneViewport(float sceneWindowWidth, float sceneWindowHeight)
 	{
 		float ratio = 1.5f;
