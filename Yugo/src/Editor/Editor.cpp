@@ -90,7 +90,6 @@ namespace Yugo
 
 		m_Scene->OnStart();
 		//m_UserInterface->OnStart();
-		//m_GameWindow->m_UserInterface->OnStart();
 
 		Dispatcher::Subscribe<MouseButtonPress>(this);
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
@@ -173,12 +172,6 @@ namespace Yugo
 			glEnable(GL_DEPTH_TEST);
 			glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of game window background
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			//static bool init = false;
-			//if (!init)
-			//{
-			//	m_GameWindow->m_UserInterface->OnStart();
-			//	init = true;
-			//}
 			m_GameWindow->m_Scene->OnRender(); // Game window scene is a copy of Editor's scene
 			m_GameWindow->m_UserInterface->OnRender();
 			Window::PollEvents(); // temp!
@@ -1761,6 +1754,8 @@ namespace Yugo
 		m_GameWindow->CreateGLFWwindow(NULL, m_MainWindow->m_GLFWwindow);
 
 		Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
+
+		m_GameWindow->m_UserInterface->OnStart();
 
 		glfwSetWindowAspectRatio(m_GameWindow->m_GLFWwindow, m_GameWindow->m_Width, m_GameWindow->m_Height);
 
