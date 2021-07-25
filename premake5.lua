@@ -27,6 +27,7 @@ IncludeDir["entt"] = "Yugo/vendor/entt"
 IncludeDir["stb_image"] = "Yugo/vendor/stb_image"
 IncludeDir["json"] = "Yugo/vendor/json"
 IncludeDir["freetype"] = "Yugo/vendor/freetype/include"
+IncludeDir["nanovg"] = "Yugo/vendor/nanovg"
 
 group "Dependencies"
     include "Yugo/vendor/GLFW"
@@ -59,7 +60,9 @@ project "Yugo"
         "%{prj.name}/vendor/glm/glm/**.inl",
         "%{prj.name}/vendor/entt/**.hpp",
         "%{prj.name}/vendor/json/**.hpp",
-        "%{prj.name}/vendor/freetype/**.h"
+        "%{prj.name}/vendor/freetype/**.h",
+        "%{prj.name}/vendor/nanovg/**.h",
+        "%{prj.name}/vendor/nanovg/**.cpp"
     }
 
     includedirs
@@ -75,7 +78,8 @@ project "Yugo"
         "%{IncludeDir.entt}",
         "%{IncludeDir.stb_image}",
         "%{IncludeDir.json}",
-        "%{IncludeDir.freetype}"
+        "%{IncludeDir.freetype}",
+        "%{IncludeDir.nanovg}"
     }
 
     links
@@ -146,7 +150,8 @@ project "Main"
             "%{IncludeDir.entt}",
             "%{IncludeDir.stb_image}",
             "%{IncludeDir.json}",
-            "%{IncludeDir.freetype}"
+            "%{IncludeDir.freetype}",
+            "%{IncludeDir.nanovg}"
         }
 
         libdirs
@@ -212,7 +217,8 @@ project "GameLogic"
             "%{IncludeDir.entt}",
             "%{IncludeDir.stb_image}",
             "%{IncludeDir.json}",
-            "%{IncludeDir.freetype}"
+            "%{IncludeDir.freetype}",
+            "%{IncludeDir.nanovg}"
         }
 
         -- libdirs

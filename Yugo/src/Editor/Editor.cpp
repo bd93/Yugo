@@ -6,7 +6,7 @@
 #include "Core/Time.h"
 #include "Core/ModelImporter.h"
 #include "Renderer/SpriteRenderer.h"
-#include "GameUI/Widget.h"
+//#include "GameUI/Widget.h"
 
 #include <ImGuizmo.h>
 #include <windows.h>
@@ -89,7 +89,8 @@ namespace Yugo
 		CreateFrameBuffer(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight);
 
 		m_Scene->OnStart();
-		m_UserInterface->OnStart();
+		//m_UserInterface->OnStart();
+		//m_GameWindow->m_UserInterface->OnStart();
 
 		Dispatcher::Subscribe<MouseButtonPress>(this);
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
@@ -158,8 +159,8 @@ namespace Yugo
 		}
 		else if (s_RenderUI)
 		{
-			ShowHierarchyWindow(m_UserInterface->m_Registry);
-			ShowInspectorWindow(m_UserInterface->m_Registry);
+			//ShowHierarchyWindow(m_UserInterface->m_Registry);
+			//ShowInspectorWindow(m_UserInterface->m_Registry);
 		}
 		ShowProjectWindow();
 
@@ -172,7 +173,14 @@ namespace Yugo
 			glEnable(GL_DEPTH_TEST);
 			glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of game window background
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			//static bool init = false;
+			//if (!init)
+			//{
+			//	m_GameWindow->m_UserInterface->OnStart();
+			//	init = true;
+			//}
 			m_GameWindow->m_Scene->OnRender(); // Game window scene is a copy of Editor's scene
+			m_GameWindow->m_UserInterface->OnRender();
 			Window::PollEvents(); // temp!
 			m_GameWindow->SwapBuffers();
 			glDisable(GL_DEPTH_TEST);
@@ -223,7 +231,7 @@ namespace Yugo
 		}
 		else if (s_RenderUI)
 		{
-			m_UserInterface->OnRender();
+			//m_UserInterface->OnRender();
 		}
 
 		m_FrameBuffer->BlitMultisampled(m_SceneInfo.SceneWidth, m_SceneInfo.SceneHeight, m_FrameBuffer->GetId(), m_IntermediateFrameBuffer->GetId());
@@ -265,6 +273,7 @@ namespace Yugo
 			Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
 			m_ScriptEngine->OnUpdate(ts);
 			m_GameWindow->m_Scene->OnUpdate(ts);
+			m_GameWindow->m_UserInterface->OnUpdate(ts);
 			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 		}
 		else
@@ -688,31 +697,31 @@ namespace Yugo
 			ImGui::NewLine();
 
 			// Show padding options for UI canvas widget
-			if (registry.has<CanvasWidgetComponent>(m_SelectedSceneEntity))
-			{
-				//auto& relationship = registry.get<RelationshipComponent>(m_SelectedSceneEntity);
-				static float padding[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; // left, right, top, bottom
-				ImGui::InputFloat4("Padding", padding);
-				static int dimensions[2] = { 1, 1 };
-				ImGui::InputInt2("Rows x Columns", dimensions);
-				static float cellWidgetSize[2] = { 50.0f, 50.0f };
-				ImGui::InputFloat2("Cell Widget Size", cellWidgetSize);
-				if (ImGui::Button("Create")) // Create canvas matrix widget
-					CreateCanvasMatrixWidget(dimensions, padding, cellWidgetSize, m_SelectedSceneEntity);
-			}
-			// Show text input for widget's text
-			if (registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
-			{
-				static entt::entity previousEntity;
-				static char buf[64] = "";
-				auto& text = registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
-				if (previousEntity != m_SelectedSceneEntity)
-					memset(buf, 0, 64 * sizeof(char));
-				if (ImGui::InputText("Text", buf, 64))
-					text.Text = std::string(buf);
-				previousEntity = m_SelectedSceneEntity;
-				ImGui::NewLine();
-			}
+			//if (registry.has<CanvasWidgetComponent>(m_SelectedSceneEntity))
+			//{
+			//	//auto& relationship = registry.get<RelationshipComponent>(m_SelectedSceneEntity);
+			//	static float padding[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; // left, right, top, bottom
+			//	ImGui::InputFloat4("Padding", padding);
+			//	static int dimensions[2] = { 1, 1 };
+			//	ImGui::InputInt2("Rows x Columns", dimensions);
+			//	static float cellWidgetSize[2] = { 50.0f, 50.0f };
+			//	ImGui::InputFloat2("Cell Widget Size", cellWidgetSize);
+			//	if (ImGui::Button("Create")) // Create canvas matrix widget
+			//		CreateCanvasMatrixWidget(dimensions, padding, cellWidgetSize, m_SelectedSceneEntity);
+			//}
+			//// Show text input for widget's text
+			//if (registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
+			//{
+			//	static entt::entity previousEntity;
+			//	static char buf[64] = "";
+			//	auto& text = registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
+			//	if (previousEntity != m_SelectedSceneEntity)
+			//		memset(buf, 0, 64 * sizeof(char));
+			//	if (ImGui::InputText("Text", buf, 64))
+			//		text.Text = std::string(buf);
+			//	previousEntity = m_SelectedSceneEntity;
+			//	ImGui::NewLine();
+			//}
 
 			if (ImGui::RadioButton("Local", s_CurrentGizmoMode == ImGuizmo::LOCAL))
 				s_CurrentGizmoMode = ImGuizmo::LOCAL;
@@ -894,15 +903,15 @@ namespace Yugo
 								ImGuiColorEditFlags_DisplayHex;
 							if (ImGui::ColorPicker4("My Color", (float*)&color, flags, &ref_color_v.x))
 							{
-								if (registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
-								{
-									auto& text = registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
-									text.Color = glm::vec4(color.x, color.y, color.z, color.w);
-								}
-								else
-								{
-									sprite.Color = glm::vec4(color.x, color.y, color.z, color.w);
-								}
+								//if (registry.has<TextWidgetComponent>(m_SelectedSceneEntity))
+								//{
+								//	auto& text = registry.get<TextWidgetComponent>(m_SelectedSceneEntity);
+								//	text.Color = glm::vec4(color.x, color.y, color.z, color.w);
+								//}
+								//else
+								//{
+								//	sprite.Color = glm::vec4(color.x, color.y, color.z, color.w);
+								//}
 							}
 
 							ImGui::Separator();
@@ -1164,9 +1173,10 @@ namespace Yugo
 			}
 			else if (s_RenderUI)
 			{
-				auto& transform = m_UserInterface->m_Registry.get<TransformComponent>(m_SelectedSceneEntity);
-				auto& camera = m_UserInterface->GetCamera();
-				ShowImGuizmoWidget(transform, camera.Projection, glm::mat4(1.0f));
+				//auto& transform = m_UserInterface->m_Registry.get<TransformComponent>(m_SelectedSceneEntity);
+				//auto& camera = m_UserInterface->GetCamera();
+				// 
+				//ShowImGuizmoWidget(transform, camera.Projection, glm::mat4(1.0f));
 			}
 		}
 		
@@ -1257,22 +1267,22 @@ namespace Yugo
 		}
 		else if (s_RenderUI)
 		{
-			auto view = m_UserInterface->m_Registry.view<RelationshipComponent, TransformComponent>();
-			using TraverseFun = std::function<void(entt::entity)>;
-			TraverseFun traverse = [&](entt::entity entity) {
-				auto& relationship = view.get<RelationshipComponent>(entity);
-				for (auto child : relationship.Children)
-				{
-					auto& childTransform = view.get<TransformComponent>(child);
-					//childTransform.DeltaPosition = transform.DeltaPosition;
-					childTransform.DeltaPosition = deltaPosition;
-				}
-				for (auto child : relationship.Children)
-				{
-					traverse(child);
-				}
-			};
-			traverse(m_SelectedSceneEntity);
+			//auto view = m_UserInterface->m_Registry.view<RelationshipComponent, TransformComponent>();
+			//using TraverseFun = std::function<void(entt::entity)>;
+			//TraverseFun traverse = [&](entt::entity entity) {
+			//	auto& relationship = view.get<RelationshipComponent>(entity);
+			//	for (auto child : relationship.Children)
+			//	{
+			//		auto& childTransform = view.get<TransformComponent>(child);
+			//		//childTransform.DeltaPosition = transform.DeltaPosition;
+			//		childTransform.DeltaPosition = deltaPosition;
+			//	}
+			//	for (auto child : relationship.Children)
+			//	{
+			//		traverse(child);
+			//	}
+			//};
+			//traverse(m_SelectedSceneEntity);
 		}
 	}
 
@@ -1432,8 +1442,8 @@ namespace Yugo
 			ImGui::InputText("##spriteName", newSpriteName, IM_ARRAYSIZE(newSpriteName));
 			if (ImGui::Button("OK"))
 			{
-				//auto newEntity = m_Scene->CreateEntity();
-				auto newEntity = m_UserInterface->CreateWidget();
+				auto newEntity = m_Scene->CreateEntity();
+				//auto newEntity = m_UserInterface->CreateWidget();
 				
 				auto& tag = newEntity.AddComponent<EntityTagComponent>();
 				auto& transform = newEntity.AddComponent<TransformComponent>();
@@ -1543,19 +1553,19 @@ namespace Yugo
 
 	void Editor::CreateWidget(const std::string& name, entt::entity parent)
 	{
-		//auto newWidget = m_Scene->CreateEntity();
-		auto newWidget = m_UserInterface->CreateWidget();
+		auto newWidget = m_Scene->CreateEntity();
+		//auto newWidget = m_UserInterface->CreateWidget();
 
 		auto& tag = newWidget.AddComponent<EntityTagComponent>();
 		auto& transform = newWidget.AddComponent<TransformComponent>();
 		auto& relationship = newWidget.AddComponent<RelationshipComponent>();
 		auto& sprite = newWidget.AddComponent<SpriteComponent>();
 		if (name == "Canvas")
-			newWidget.AddComponent<CanvasWidgetComponent>();
+			//newWidget.AddComponent<CanvasWidgetComponent>();
 		if (name == "Button")
-			newWidget.AddComponent<ButtonWidgetComponent>();
+			//newWidget.AddComponent<ButtonWidgetComponent>();
 		if (name == "Text")
-			newWidget.AddComponent<TextWidgetComponent>();
+			//newWidget.AddComponent<TextWidgetComponent>();
 
 		tag.Name = name;
 		relationship.Parent = parent;
@@ -1563,15 +1573,15 @@ namespace Yugo
 
 		if (parent != entt::null)
 		{
-			//auto& parentTransform = m_Scene->m_Registry.get<TransformComponent>(parent);
-			auto& parentTransform = m_UserInterface->m_Registry.get<TransformComponent>(parent);
+			auto& parentTransform = m_Scene->m_Registry.get<TransformComponent>(parent);
+			//auto& parentTransform = m_UserInterface->m_Registry.get<TransformComponent>(parent);
 			transform.Position = parentTransform.Position;
 			transform.Rotation = parentTransform.Rotation;
 			if (name == "Text")
 				transform.Position.x += parentTransform.Scale.x / 2.0f; // Pass center position so text can be rendered at centered position compared to parent widget
 
-			//auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(parent);
-			auto& parentRelationship = m_UserInterface->m_Registry.get<RelationshipComponent>(parent);
+			auto& parentRelationship = m_Scene->m_Registry.get<RelationshipComponent>(parent);
+			//auto& parentRelationship = m_UserInterface->m_Registry.get<RelationshipComponent>(parent);
 			parentRelationship.Children.push_back(newWidget.GetEnttEntity());
 			parentRelationship.NumOfChildren++;
 		}
@@ -1610,7 +1620,7 @@ namespace Yugo
 				// Cell canvas widget is a slot (placeholder) for widgets such as buttons
 				auto canvas = m_Scene->CreateEntity();
 
-				auto& cellWidgetCanvas = canvas.AddComponent<CanvasWidgetComponent>();
+				//auto& cellWidgetCanvas = canvas.AddComponent<CanvasWidgetComponent>();
 				auto& cellWidgetRelationship = canvas.AddComponent<RelationshipComponent>();
 				auto& cellWidgetSprite = canvas.AddComponent<SpriteComponent>();
 				auto& cellWidgetTransform = canvas.AddComponent<TransformComponent>();
@@ -1674,14 +1684,14 @@ namespace Yugo
 				if (m_Scene->m_Registry.has<SpriteComponent>(child))
 					m_Scene->m_Registry.emplace<SpriteComponent>(copyEntity, m_Scene->m_Registry.get<SpriteComponent>(child));
 
-				if (m_Scene->m_Registry.has<CanvasWidgetComponent>(child))
-					m_Scene->m_Registry.emplace<CanvasWidgetComponent>(copyEntity, m_Scene->m_Registry.get<CanvasWidgetComponent>(child));
+				//if (m_Scene->m_Registry.has<CanvasWidgetComponent>(child))
+				//	m_Scene->m_Registry.emplace<CanvasWidgetComponent>(copyEntity, m_Scene->m_Registry.get<CanvasWidgetComponent>(child));
 
-				if (m_Scene->m_Registry.has<ButtonWidgetComponent>(child))
-					m_Scene->m_Registry.emplace<ButtonWidgetComponent>(copyEntity, m_Scene->m_Registry.get<ButtonWidgetComponent>(child));
+				//if (m_Scene->m_Registry.has<ButtonWidgetComponent>(child))
+				//	m_Scene->m_Registry.emplace<ButtonWidgetComponent>(copyEntity, m_Scene->m_Registry.get<ButtonWidgetComponent>(child));
 
-				if (m_Scene->m_Registry.has<TextWidgetComponent>(child))
-					m_Scene->m_Registry.emplace<TextWidgetComponent>(copyEntity, m_Scene->m_Registry.get<TextWidgetComponent>(child));
+				//if (m_Scene->m_Registry.has<TextWidgetComponent>(child))
+				//	m_Scene->m_Registry.emplace<TextWidgetComponent>(copyEntity, m_Scene->m_Registry.get<TextWidgetComponent>(child));
 
 				auto& copyRelationship = m_Scene->m_Registry.emplace<RelationshipComponent>(copyEntity);
 				copyRelationship.Parent = copyNode; // copyNode is the parent of copyEntity
@@ -1724,14 +1734,14 @@ namespace Yugo
 		if (m_Scene->m_Registry.has<SpriteComponent>(node))
 			m_Scene->m_Registry.emplace<SpriteComponent>(copyNode, m_Scene->m_Registry.get<SpriteComponent>(node));
 
-		if (m_Scene->m_Registry.has<CanvasWidgetComponent>(node))
-			m_Scene->m_Registry.emplace<CanvasWidgetComponent>(copyNode, m_Scene->m_Registry.get<CanvasWidgetComponent>(node));
+		//if (m_Scene->m_Registry.has<CanvasWidgetComponent>(node))
+		//	m_Scene->m_Registry.emplace<CanvasWidgetComponent>(copyNode, m_Scene->m_Registry.get<CanvasWidgetComponent>(node));
 
-		if (m_Scene->m_Registry.has<ButtonWidgetComponent>(node))
-			m_Scene->m_Registry.emplace<ButtonWidgetComponent>(copyNode, m_Scene->m_Registry.get<ButtonWidgetComponent>(node));
+		//if (m_Scene->m_Registry.has<ButtonWidgetComponent>(node))
+		//	m_Scene->m_Registry.emplace<ButtonWidgetComponent>(copyNode, m_Scene->m_Registry.get<ButtonWidgetComponent>(node));
 
-		if (m_Scene->m_Registry.has<TextWidgetComponent>(node))
-			m_Scene->m_Registry.emplace<TextWidgetComponent>(copyNode, m_Scene->m_Registry.get<TextWidgetComponent>(node));
+		//if (m_Scene->m_Registry.has<TextWidgetComponent>(node))
+		//	m_Scene->m_Registry.emplace<TextWidgetComponent>(copyNode, m_Scene->m_Registry.get<TextWidgetComponent>(node));
 
 		//auto& copyRelationship = m_Scene->m_Registry.emplace<RelationshipComponent>(copyNode, m_Scene->m_Registry.get<RelationshipComponent>(node));
 		auto& copyRelationship = m_Scene->m_Registry.emplace<RelationshipComponent>(copyNode);
@@ -1774,9 +1784,9 @@ namespace Yugo
 		m_Scene->m_CloneFunctions[entt::type_hash<AnimationComponent>::value()] = &Scene::CloneRegistry<AnimationComponent>;
 		m_Scene->m_CloneFunctions[entt::type_hash<CameraComponent>::value()] = &Scene::CloneRegistry<CameraComponent>;
 		m_Scene->m_CloneFunctions[entt::type_hash<ScriptComponent>::value()] = &Scene::CloneRegistry<ScriptComponent>;
-		m_Scene->m_CloneFunctions[entt::type_hash<TextWidgetComponent>::value()] = &Scene::CloneRegistry<TextWidgetComponent>;
-		m_Scene->m_CloneFunctions[entt::type_hash<CanvasWidgetComponent>::value()] = &Scene::CloneRegistry<CanvasWidgetComponent>;
-		m_Scene->m_CloneFunctions[entt::type_hash<ButtonWidgetComponent>::value()] = &Scene::CloneRegistry<ButtonWidgetComponent>;
+		//m_Scene->m_CloneFunctions[entt::type_hash<TextWidgetComponent>::value()] = &Scene::CloneRegistry<TextWidgetComponent>;
+		//m_Scene->m_CloneFunctions[entt::type_hash<CanvasWidgetComponent>::value()] = &Scene::CloneRegistry<CanvasWidgetComponent>;
+		//m_Scene->m_CloneFunctions[entt::type_hash<ButtonWidgetComponent>::value()] = &Scene::CloneRegistry<ButtonWidgetComponent>;
 
 		// Create entities with same id as entities in m_Scene
 		fromRegistry.each([&toRegistry](auto entity)

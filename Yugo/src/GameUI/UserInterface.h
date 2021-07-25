@@ -3,23 +3,18 @@
 #include "Core/Core.h"
 #include "Camera/Camera.h"
 
-#include <entt/entt.hpp>
-
+class NVGcontext;
 namespace Yugo
 {
 
-	class Scene;
+	class UserInterfaceTree;
 	class Widget;
-
 	class UserInterface
 	{
-		friend class Widget;
-		friend class Editor; // World editor UI
-
-		using TraverseFun = std::function<void(entt::entity)>;
 
 	public:
 		UserInterface();
+		~UserInterface();
 
 		void OnStart();
 		void OnEvent(const Event& event);
@@ -27,16 +22,11 @@ namespace Yugo
 		void OnRender();
 		void OnShutdown();
 
-		void SaveUserInerface();
-		void LoadUserInterface();
-
-		Widget CreateWidget(const std::string& name = "");
-		
-		CameraComponent& GetCamera();
+		void AddWidget(Widget* widget, Widget* parent);
 
 	private:
-		entt::registry m_Registry;
-
+		NVGcontext* m_NVGContext;
+		UserInterfaceTree* m_UserInterfaceTree;
 	};
 
 }

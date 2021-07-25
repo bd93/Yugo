@@ -5,20 +5,46 @@
 
 namespace Yugo
 {
-	Widget::Widget(entt::entity entityHandle, const std::string& name, UserInterface* userInterface)
-		: m_EntityHandle(entityHandle), 
-		m_Name(name), 
-		m_UserInterface(userInterface)
-	{
-	}
 
-	const std::string& Widget::GetName() const
-	{
-		return m_Name;
-	}
+    Widget::Widget(Widget* parent)
+    {
+        if (parent)
+            m_Parent = parent;
+    }
 
-	const entt::entity Widget::GetEnttEntity() const
-	{
-		return m_EntityHandle;
-	}
+    Widget::~Widget()
+    {
+        if (m_Parent)
+        {
+            delete m_Parent;
+            m_Parent = nullptr;
+        }
+
+        for (auto child : m_Children)
+        {
+            delete child;
+            child = nullptr;
+        }
+    }
+
+    void Widget::SetParent(Widget* parent)
+    {
+        m_Parent = parent;
+    }
+
+    void Widget::AddChild(Widget* child)
+    {
+        m_Children.push_back(child);
+    }
+
+    std::vector<Widget*>& Widget::GetChildren()
+    {
+        return m_Children;
+    }
+
+    Widget* Widget::GetParent()
+    {
+        return m_Parent;
+    }
+
 }

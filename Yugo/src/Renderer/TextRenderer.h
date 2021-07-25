@@ -1,7 +1,6 @@
 #pragma once
 #include "Renderer/Shader.h"
 #include "Camera/Camera.h"
-#include "GameUI/Components.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -24,7 +23,7 @@ namespace Yugo
 	{
 	public:
 		static void Submit();
-		static void Render(TextWidgetComponent& text, TransformComponent& transform, const CameraComponent& camera, const Shader& shader);
+		//static void Render(TextWidgetComponent& text, TransformComponent& transform, const CameraComponent& camera, const Shader& shader);
 		//static void SetCamera(const sPtr<Camera>& camera);
 		static void EnableBlend();
 		static void DisableBlend();

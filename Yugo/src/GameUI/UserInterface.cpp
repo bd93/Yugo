@@ -1,13 +1,21 @@
 #include "pch.h"
 #include "Core/Dispatcher.h"
-#include "Components.h"
 #include "UserInterface.h"
 #include "Core/FileSystem.h"
 #include "Scene/Components.h"
 #include "Scene/Entity.h"
 #include "Renderer/SpriteRenderer.h"
 #include "Renderer/TextRenderer.h"
+#include "Core/Dispatcher.h"
+
+#include "UserInterfaceTree.h"
+#include "Canvas.h" // TODO remove it later
 #include "Widget.h"
+
+#include <glad/glad.h>
+#include "nanovg/nanovg.h"
+#define NANOVG_GL3_IMPLEMENTATION
+#include "nanovg/nanovg_gl.h"
 
 
 namespace Yugo
@@ -15,43 +23,49 @@ namespace Yugo
 
 	UserInterface::UserInterface()
 	{
-		//m_Camera = sPtrCreate<Camera>(glm::vec3(100.0f, 100.0f, 100.0f));
+		m_UserInterfaceTree = new UserInterfaceTree();
 
-		//Dispatcher::Subscribe<MouseButtonPress>(this);
-		//Dispatcher::Subscribe<KeyboardKeyPress>(this);
-		//Dispatcher::Subscribe<MouseScroll>(this);
+		Dispatcher::Subscribe<KeyboardKeyPress>(this);
+		Dispatcher::Subscribe<MouseButtonPress>(this);
+		Dispatcher::Subscribe<MouseScroll>(this);
+	}
 
-		auto cameraEntity = CreateWidget();
-		auto& transform = cameraEntity.AddComponent<TransformComponent>();
-		auto& camera = cameraEntity.AddComponent<CameraComponent>();
-		auto& tag = cameraEntity.AddComponent<EntityTagComponent>();
-		tag.Name = "UI Camera";
-		Camera::OnStart(transform, camera);
+	UserInterface::~UserInterface()
+	{
+		delete m_UserInterfaceTree;
 	}
 
 	void UserInterface::OnStart()
 	{
-		Shader uiTexturedShader(
-			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_vertex.shader",
-			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_textured_fragment.shader"
-		);
-		ResourceManager::AddShader("uiTexturedShader", uiTexturedShader);
+		//Shader uiTexturedShader(
+		//	FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_vertex.shader",
+		//	FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_textured_fragment.shader"
+		//);
+		//ResourceManager::AddShader("uiTexturedShader", uiTexturedShader);
 
-		Shader uiFlatColoredShader(
-			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_vertex.shader",
-			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_flat_colored_fragment.shader"
-		);
-		ResourceManager::AddShader("uiFlatColoredShader", uiFlatColoredShader);
+		//Shader uiFlatColoredShader(
+		//	FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_vertex.shader",
+		//	FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Shaders\\ui_flat_colored_fragment.shader"
+		//);
+		//ResourceManager::AddShader("uiFlatColoredShader", uiFlatColoredShader);
 
-		Texture texture(
-			FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Textures\\awesomeface.png"
-		);
-		ResourceManager::AddTexture("texture", texture);
+		//Texture texture(
+		//	FileSystem::GetSolutionFolderPath() + "Main\\src\\Assets\\Textures\\awesomeface.png"
+		//);
+		//ResourceManager::AddTexture("texture", texture);
 
-		//SpriteRenderer::SetCamera(m_Camera);
-		//TextRenderer::SetCamera(m_Camera);
 
-		//TextRenderer::Submit();
+		// nvg initialization
+		m_NVGContext = nvgCreateGL3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
+		if (m_NVGContext == nullptr)
+			throw std::runtime_error("Could not initialize NanoVG");
+
+		// TODO: remove it later
+		Canvas* canvas = new Canvas();
+		canvas->m_Position = glm::vec2(100.0f, 100.0f);
+		canvas->m_Size = glm::vec2(50.0f, 50.0f);
+		canvas->m_BackgroundColor = glm::vec4(1.0f, 0.5f, 0.3f, 0.5f);
+		AddWidget(canvas, m_UserInterfaceTree->m_Root);
 	}
 
 	void UserInterface::OnEvent(const Event& event)
@@ -61,113 +75,35 @@ namespace Yugo
 			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
 			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
 			{
-				auto view = m_Registry.view<SpriteComponent, TransformComponent>();
-				for (auto entity : view)
-				{
-					const auto& [sprite, transform] = view.get<SpriteComponent, TransformComponent>(entity);
-					if (MouseRay::CheckCollisionWithSprite(transform))
-						std::cout << "da!\n";
-					else
-						std::cout << "ne!\n";
-				}
+				auto mousePosition = UserInput::GetMousePosition();
+				Widget* intersectedWidget = m_UserInterfaceTree->CheckIntersectionWithMouse(mousePosition.first, mousePosition.second);
+				if (intersectedWidget)
+					intersectedWidget->OnLeftMouseClick();
 			}
 		}
 	}
 
 	void UserInterface::OnUpdate(TimeStep ts)
 	{
-		// Pre-order traversal (recursive method)
-		TraverseFun traverse = [&](entt::entity entity) {
-			auto view = m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
-			auto& [relationship, transform] = view.get<RelationshipComponent, TransformComponent>(entity);
-
-			transform.Position += transform.DeltaPosition;
-			transform.ModelMatrix = glm::mat4(1.0f);
-			transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
-			transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
-
-			for (auto child : relationship.Children)
-				traverse(child);
-		};
-
-		auto view = m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
-		for (auto entity : view)
-		{
-			auto& relationship = view.get<RelationshipComponent>(entity);
-			if (relationship.Parent == entt::null) // Pass only child of root node (scene node)
-				traverse(entity);
-		}
+		
 	}
 
 	void UserInterface::OnRender()
 	{
-		// Level-order traversal (iterative method)
-		TraverseFun traverse = [&](entt::entity entity) {
-			std::queue<entt::entity> queue;
-			queue.push(entity);
-			
-			auto view = m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
-
-			while (!queue.empty())
-			{
-				entity = queue.front();
-				queue.pop();
-
-				auto [sprite, transform, relationship] = view.get<SpriteComponent, TransformComponent, RelationshipComponent>(entity);
-				auto& camera = GetCamera();
-
-				if (m_Registry.has<TextWidgetComponent>(entity))
-				{
-					auto& text = m_Registry.get<TextWidgetComponent>(entity);
-					TextRenderer::Render(text, transform, camera, ResourceManager::GetShader("textShader"));
-				}
-				else
-				{
-					if (sprite.HasTexture)
-						SpriteRenderer::Render(sprite, transform, camera, ResourceManager::GetShader("uiTexturedShader"));
-					else
-						SpriteRenderer::Render(sprite, transform, camera, ResourceManager::GetShader("uiFlatColoredShader"));
-				}
-
-				for (auto child : relationship.Children)
-				{
-					queue.push(child);
-				}
-			}
-		};
-
-		auto view = m_Registry.view<SpriteComponent, TransformComponent, RelationshipComponent>();
-		for (auto entity : view)
-			traverse(entity);
+		nvgBeginFrame(m_NVGContext, 1200, 800, 1.f);
+		m_UserInterfaceTree->Draw(m_NVGContext);
+		nvgEndFrame(m_NVGContext);
 	}
 
 	void UserInterface::OnShutdown()
 	{
 	}
 
-	void UserInterface::SaveUserInerface()
+	void UserInterface::AddWidget(Widget* widget, Widget* parent)
 	{
+		// TODO: make it traverse...
+		m_UserInterfaceTree->m_Root->AddChild(widget);
 	}
 
-	void UserInterface::LoadUserInterface()
-	{
-	}
-
-	Widget UserInterface::CreateWidget(const std::string& name)
-	{
-		Widget widget = { m_Registry.create(), name, this };
-		return widget;
-	}
-
-	CameraComponent& UserInterface::GetCamera()
-	{
-		auto view = m_Registry.view<CameraComponent, EntityTagComponent>();
-		for (auto entity : view)
-		{
-			auto& tag = view.get<EntityTagComponent>(entity);
-			if (tag.Name == "UI Camera")
-				return view.get<CameraComponent>(entity);
-		}
-	}
 
 }
