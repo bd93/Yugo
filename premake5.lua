@@ -34,6 +34,8 @@ group "Dependencies"
     include "Yugo/vendor/GLad"
     include "Yugo/vendor/imgui"
     include "Yugo/vendor/ImGuizmo"
+    --include "Yugo/vendor/stb_image" -- currently removed because stb_image.h in nanovg has definitions for all functions
+    include "Yugo/vendor/nanovg"
 
 group ""
 
@@ -55,14 +57,14 @@ project "Yugo"
         "%{prj.name}/src/**.h",
         "%{prj.name}/src/**.cpp",
         "%{prj.name}/vendor/stb_image/**.h",
-        "%{prj.name}/vendor/stb_image/**.cpp",
+        --"%{prj.name}/vendor/stb_image/**.cpp", -- currently removed because stb_image.h in nanovg has definitions for all functions
         "%{prj.name}/vendor/glm/glm/**.hpp",
         "%{prj.name}/vendor/glm/glm/**.inl",
         "%{prj.name}/vendor/entt/**.hpp",
         "%{prj.name}/vendor/json/**.hpp",
         "%{prj.name}/vendor/freetype/**.h",
-        "%{prj.name}/vendor/nanovg/**.h",
-        "%{prj.name}/vendor/nanovg/**.cpp"
+        --"%{prj.name}/vendor/nanovg/**.h",
+        --"%{prj.name}/vendor/nanovg/**.c"
     }
 
     includedirs
@@ -88,6 +90,8 @@ project "Yugo"
         "Glad",
         "ImGui",
         "ImGuizmo",
+        --"stb_image",
+        "nanovg",
         "opengl32.lib"
     }
 
