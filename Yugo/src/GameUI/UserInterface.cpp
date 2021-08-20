@@ -62,6 +62,7 @@ namespace Yugo
 
 		// TODO: remove it later
 		Canvas* canvas = new Canvas();
+		canvas->SetParent(m_UserInterfaceTree->m_Root);
 		canvas->m_Position = glm::vec2(100.0f, 100.0f);
 		canvas->m_Size = glm::vec2(50.0f, 50.0f);
 		canvas->m_BackgroundColor = glm::vec4(1.0f, 0.5f, 0.3f, 0.5f);

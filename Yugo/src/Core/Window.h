@@ -37,6 +37,7 @@ namespace Yugo
 		int const GetWindowWidth();
 		int const GetWindowHeight();
 		std::pair<int, int> GetWindowSize();
+		const std::string& GetWindowName();
 
 		static void InitGLFW();
 		static void Hint(int hint, int value);
@@ -52,6 +53,8 @@ namespace Yugo
 
 		GLFWwindow* m_GLFWwindow;
 		std::string m_WindowName;
+		
+		static std::string s_CurrentActiveWindowName;
 
 		int m_Width;
 		int m_Height;

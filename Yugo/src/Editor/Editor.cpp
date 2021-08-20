@@ -95,7 +95,7 @@ namespace Yugo
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
 		Dispatcher::Subscribe<ImportAssetEvent>(this);
 		Dispatcher::Subscribe<MouseScroll>(this);
-		//Dispatcher::Subscribe<WindowResize>(this);
+		Dispatcher::Subscribe<WindowResize>(this);
 	}
 
 	/**
@@ -173,8 +173,8 @@ namespace Yugo
 			glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of game window background
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			m_GameWindow->m_Scene->OnRender(); // Game window scene is a copy of Editor's scene
-			m_GameWindow->m_UserInterface->OnRender();
-			Window::PollEvents(); // temp!
+			//m_GameWindow->m_UserInterface->OnRender();
+			//Window::PollEvents(); // temp!
 			m_GameWindow->SwapBuffers();
 			glDisable(GL_DEPTH_TEST);
 			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
@@ -187,6 +187,7 @@ namespace Yugo
 				UserInput::SetGLFWwindow(m_MainWindow->m_GLFWwindow);
 				m_MainWindow->SetEventCallbacks();
 				m_GameWindow->RemoveEventCallbacks();
+				Window::s_CurrentActiveWindowName = m_MainWindow->GetWindowName();
 			}
 		}
 
@@ -263,11 +264,11 @@ namespace Yugo
 		if (s_PlayMode)
 		{
 			// The order of update is important! If scene is updated first, then script can't execute entity movement
-			Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
+			//Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
 			m_ScriptEngine->OnUpdate(ts);
 			m_GameWindow->m_Scene->OnUpdate(ts);
-			m_GameWindow->m_UserInterface->OnUpdate(ts);
-			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
+			//m_GameWindow->m_UserInterface->OnUpdate(ts);
+			//Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 		}
 		else
 		{
@@ -301,20 +302,19 @@ namespace Yugo
 	{
 		if (s_PlayMode)
 		{
-			Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
+			//Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
 			m_ScriptEngine->OnEvent(event);
 
 			if (event.GetEventType() == EventType::WindowResize)
 			{
-				// TODO: Check if Projection Matrix should be updated 
-				//const auto& windowResize = static_cast<const WindowResize&>(event);
-				//int screenWidth = windowResize.GetWidth();
-				//int screenHeight = windowResize.GetHeight();
-				//auto& camera = m_Scene->GetCamera();
-				//Camera::UpdateProjectionMatrix(camera, screenWidth, screenHeight);
+				const auto& windowResize = static_cast<const WindowResize&>(event);
+				int screenWidth = windowResize.GetWidth();
+				int screenHeight = windowResize.GetHeight();
+				auto& camera = m_GameWindow->m_Scene->GetCamera();
+				Camera::UpdateProjectionMatrix(camera, screenWidth, screenHeight);
 			}
 
-			Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
+			//Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 		}
 		else
 		{
@@ -1752,12 +1752,13 @@ namespace Yugo
 	{
 		Window::Hint(GLFW_DECORATED, true);
 		m_GameWindow->CreateGLFWwindow(NULL, m_MainWindow->m_GLFWwindow);
+		Window::s_CurrentActiveWindowName = m_GameWindow->GetWindowName();
 
 		Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
 
 		m_GameWindow->m_UserInterface->OnStart();
 
-		glfwSetWindowAspectRatio(m_GameWindow->m_GLFWwindow, m_GameWindow->m_Width, m_GameWindow->m_Height);
+		//glfwSetWindowAspectRatio(m_GameWindow->m_GLFWwindow, m_GameWindow->m_Width, m_GameWindow->m_Height);
 
 		m_GameWindow->SetEventCallbacks();
 		m_MainWindow->RemoveEventCallbacks();

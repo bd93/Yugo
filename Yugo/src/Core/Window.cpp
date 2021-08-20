@@ -9,6 +9,8 @@
 namespace Yugo
 {
 
+	std::string Window::s_CurrentActiveWindowName;
+
 	Window::Window(const std::string& windowName, int width, int height)
 		: m_GLFWwindow(nullptr),
 		m_WindowName(windowName),
@@ -135,6 +137,11 @@ namespace Yugo
 		return { m_Width, m_Height };
 	}
 
+	const std::string& Window::GetWindowName()
+	{
+		return m_WindowName;
+	}
+
 	void Window::SetEventCallbacks()
 	{
 		glfwSetWindowSizeCallback(m_GLFWwindow, [](GLFWwindow* window, int width, int height)
@@ -150,8 +157,6 @@ namespace Yugo
 		glfwSetFramebufferSizeCallback(m_GLFWwindow, [](GLFWwindow* window, int width, int height)
 			{
 				glViewport(0, 0, width, height);
-				//WindowResize resizeEvent{ width, height };
-				//Dispatcher::Publish<WindowResize>(resizeEvent);
 			}
 		);
 

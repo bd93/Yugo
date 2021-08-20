@@ -139,7 +139,8 @@ namespace Yugo
 					MeshRenderer::Render(mesh, transform, camera, ResourceManager::GetShader("modelShader"));
 			}
 		}
-
+		GLint data[4];
+		glGetIntegerv(GL_VIEWPORT, data);
 		// Render meshes without animations
 		{
 			auto view = m_Registry.view<MeshComponent, TransformComponent>(entt::exclude<AnimationComponent>);

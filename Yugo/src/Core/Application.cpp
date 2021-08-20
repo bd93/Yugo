@@ -26,6 +26,7 @@ namespace Yugo
 	{
 		Window::InitGLFW();
 		m_Editor->m_MainWindow->CreateGLFWwindow(NULL, NULL);
+		Window::s_CurrentActiveWindowName = m_Editor->m_MainWindow->GetWindowName();
 		Window::MakeContextCurrent(m_Editor->m_MainWindow->m_GLFWwindow);
 		InitOpenGL();
 
@@ -67,8 +68,6 @@ namespace Yugo
 		// Game loop
 		while (!m_Editor->m_MainWindow->WindowShouldClose())
 		{
-			//Window::PollEvents();
-
 			// Update
 #ifdef YU_DEBUG
 			m_Editor->OnUpdate(Time::GetDeltaTime());
@@ -85,8 +84,16 @@ namespace Yugo
 #ifdef YU_RELEASE
 			m_Window->OnRender();
 #endif
-
-			Window::PollEvents();
+			if (Window::s_CurrentActiveWindowName == "Game")
+			{
+				Window::MakeContextCurrent(m_Editor->m_GameWindow->m_GLFWwindow);
+				Window::PollEvents();
+				Window::MakeContextCurrent(m_Editor->m_MainWindow->m_GLFWwindow);
+			}
+			else
+			{
+				Window::PollEvents();
+			}
 			// Swap buffers
 #ifdef YU_DEBUG
 			m_Editor->m_MainWindow->SwapBuffers();
