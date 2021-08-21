@@ -19,6 +19,8 @@ namespace Yugo
 		m_Scene(sPtrCreate<Scene>()),
 		m_UserInterface(sPtrCreate<UserInterface>())
 	{
+		m_UserInterface->m_FramebufferWidth = width;
+		m_UserInterface->m_FramebufferHeight = height;
 	}
 
 	void Window::OnStart()
@@ -157,6 +159,9 @@ namespace Yugo
 		glfwSetFramebufferSizeCallback(m_GLFWwindow, [](GLFWwindow* window, int width, int height)
 			{
 				glViewport(0, 0, width, height);
+				Window* mainWindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
+				mainWindow->m_UserInterface->m_FramebufferWidth = width;
+				mainWindow->m_UserInterface->m_FramebufferHeight = height;
 			}
 		);
 

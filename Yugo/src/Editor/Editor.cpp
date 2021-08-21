@@ -173,7 +173,7 @@ namespace Yugo
 			glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Color of game window background
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			m_GameWindow->m_Scene->OnRender(); // Game window scene is a copy of Editor's scene
-			//m_GameWindow->m_UserInterface->OnRender();
+			m_GameWindow->m_UserInterface->OnRender();
 			//Window::PollEvents(); // temp!
 			m_GameWindow->SwapBuffers();
 			glDisable(GL_DEPTH_TEST);
@@ -267,7 +267,7 @@ namespace Yugo
 			//Window::MakeContextCurrent(m_GameWindow->m_GLFWwindow);
 			m_ScriptEngine->OnUpdate(ts);
 			m_GameWindow->m_Scene->OnUpdate(ts);
-			//m_GameWindow->m_UserInterface->OnUpdate(ts);
+			m_GameWindow->m_UserInterface->OnUpdate(ts);
 			//Window::MakeContextCurrent(m_MainWindow->m_GLFWwindow);
 		}
 		else
@@ -310,6 +310,8 @@ namespace Yugo
 				const auto& windowResize = static_cast<const WindowResize&>(event);
 				int screenWidth = windowResize.GetWidth();
 				int screenHeight = windowResize.GetHeight();
+				m_GameWindow->m_UserInterface->m_FramebufferWidth = screenWidth;
+				m_GameWindow->m_UserInterface->m_FramebufferHeight = screenHeight;
 				auto& camera = m_GameWindow->m_Scene->GetCamera();
 				Camera::UpdateProjectionMatrix(camera, screenWidth, screenHeight);
 			}

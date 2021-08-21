@@ -24,6 +24,9 @@ namespace Yugo
 
 		void AddWidget(Widget* widget, Widget* parent);
 
+		int m_FramebufferWidth;
+		int m_FramebufferHeight;
+
 	private:
 		NVGcontext* m_NVGContext;
 		UserInterfaceTree* m_UserInterfaceTree;

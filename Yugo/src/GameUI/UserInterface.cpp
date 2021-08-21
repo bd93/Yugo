@@ -91,7 +91,7 @@ namespace Yugo
 
 	void UserInterface::OnRender()
 	{
-		nvgBeginFrame(m_NVGContext, 1200, 800, 1.f);
+		nvgBeginFrame(m_NVGContext, m_FramebufferWidth, m_FramebufferHeight, 1.f);
 		m_UserInterfaceTree->Draw(m_NVGContext);
 		nvgEndFrame(m_NVGContext);
 	}
