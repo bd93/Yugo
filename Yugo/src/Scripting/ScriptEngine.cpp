@@ -2,16 +2,13 @@
 
 #include "ScriptEngine.h"
 #include "Input/UserInput.h"
+#include "GameUI/AllWidgets.h"
+#include "GameUI/UserInterface.h"
 //#include "EngineFuncs.h"
 
 
 namespace Yugo
 {
-
-	ScriptEngine::ScriptEngine()
-		: m_Scene(nullptr)
-	{
-	}
 
 	/**
 	 * @brief Method to be called during application OnStart stage.
@@ -20,7 +17,7 @@ namespace Yugo
 	 * Then it creates interface implementations and sets it in client scripts and game objects.
 	 * It also pushes interfaces and game objects to vectors in order to destroy them when OnStop method is called. 
 	 */
-	void Yugo::ScriptEngine::OnStart(Scene* scene, Window* window)
+	void Yugo::ScriptEngine::OnStart(Scene* scene, UserInterface* ui, Window* window)
 	{
 #ifdef YU_RELEASE
 		Dispatcher::Subscribe<KeyboardKeyPress>(this);
@@ -30,6 +27,7 @@ namespace Yugo
 #endif
 
 		m_Scene = scene;
+		m_UserInterface = ui;
 		m_Window = window;
 
 		m_Lib = LoadLibrary(L"GameLogic.dll");
@@ -51,12 +49,18 @@ namespace Yugo
 		ImportGameEngineFuncs SetGameEngineFuncs = (ImportGameEngineFuncs)GetProcAddress(m_Lib, "ImportGameEngineFuncs");
 		if (SetGameEngineFuncs == NULL)
 			std::cout << "Cannot load ImportGameEngineFuncs function!\n";
+		ImportUiEngineFuncs SetUiEngineFuncs = (ImportUiEngineFuncs)GetProcAddress(m_Lib, "ImportUiEngineFuncs");
+		if (SetUiEngineFuncs == NULL)
+			std::cout << "Cannot load ImportUiEngineFuncs function!\n";
 
 		GameLogic::GameEngineFuncs gameEngineFuncs;
+		GameLogic::UiEngineFuncs uiEngineFuncs;
 
 		BindGameEngineFunctionalities(gameEngineFuncs);
+		BindUiEngineFunctionalities(uiEngineFuncs);
 
 		SetGameEngineFuncs(gameEngineFuncs);
+		SetUiEngineFuncs(uiEngineFuncs);
 
 		m_ScriptArray = NewScripts();
 
@@ -189,6 +193,11 @@ namespace Yugo
 		m_Scene = scene;
 	}
 
+	void ScriptEngine::SetUserInterface(UserInterface* ui)
+	{
+		m_UserInterface = ui;
+	}
+
 	void ScriptEngine::BindGameEngineFunctionalities(GameLogic::GameEngineFuncs& gameEngineFuncs)
 	{
 		gameEngineFuncs.IsKeyboardKeyPressed = UserInput::IsKeyboardKeyPressed;
@@ -262,6 +271,40 @@ namespace Yugo
 		gameEngineFuncs.GetEntityTagComponentsInChildren= [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<EntityTagComponent>(entity); };
 		gameEngineFuncs.GetCameraComponentsInChildren = [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<CameraComponent>(entity); };
 		gameEngineFuncs.GetScriptComponentsInChildren = [this](entt::entity entity) ->auto& {return m_Scene->GetComponentsInChildren<ScriptComponent>(entity); };
+	}
+
+	void ScriptEngine::BindUiEngineFunctionalities(GameLogic::UiEngineFuncs& uiEngineFuncs)
+	{
+		uiEngineFuncs.CreateWidget = [this](Widget::Type type, Widget* parent) -> Widget*
+		{
+			Widget* widget = nullptr;
+
+			switch (type)
+			{
+			case Yugo::Widget::Canvas:
+			{
+				widget = new Canvas();
+				widget->SetParent(parent);
+				m_UserInterface->AddWidget(widget, parent);
+				break;
+			}
+			case Yugo::Widget::Button:
+			{
+				widget = new Button();
+				widget->SetParent(parent);
+				m_UserInterface->AddWidget(widget, parent);
+				break;
+			}
+			case Yugo::Widget::Slider:
+				break;
+			default:
+				break;
+			}
+
+			return widget;
+		};
+
+		uiEngineFuncs.GetUserInterfaceRoot = [this]() ->Widget* { return m_UserInterface->GetRoot(); };
 	}
 
 }

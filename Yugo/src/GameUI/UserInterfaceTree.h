@@ -13,6 +13,8 @@ namespace Yugo
 
 	public:
 		UserInterfaceTree();
+		~UserInterfaceTree();
+
 		void Update(TimeStep ts);
 		void Draw(NVGcontext* ctx);
 

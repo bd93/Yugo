@@ -70,7 +70,8 @@ namespace GameLogic
 
 	struct UiEngineFuncs
 	{
-		//std::function<CanvasComponent& (entt::entity)> GetCanvasComponent;
+		std::function<Yugo::Widget* (Yugo::Widget::Type, Yugo::Widget*)> CreateWidget;
+		std::function<Yugo::Widget* (void)> GetUserInterfaceRoot;
 		//std::function<ButtonComponent& (entt::entity)> GetButtonComponent;
 		//std::function<TextComponent& (entt::entity)> GetTextComponent;
 	};
@@ -83,6 +84,10 @@ namespace GameLogic
 		{
 			s_GameEngineFuncs = gameEngineFuncs;
 		}
+		static void SetUiEngineFuncs(UiEngineFuncs uiEngineFuncs)
+		{
+			s_UiEngineFuncs = uiEngineFuncs;
+		}
 
 		static GameEngineFuncs& GetGameEngineFuncs()
 		{
@@ -93,12 +98,12 @@ namespace GameLogic
 		
 		static UiEngineFuncs& GetUiEngineFuncs()
 		{
-			static UiEngineFuncs uiEngineFuncs;
-			return uiEngineFuncs;
+			return s_UiEngineFuncs;
 		}
 
 	private:
 		static GameEngineFuncs s_GameEngineFuncs;
+		static UiEngineFuncs s_UiEngineFuncs;
 
 	};
 

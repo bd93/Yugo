@@ -41,9 +41,10 @@ namespace Yugo
     {
     }
 
-    void Canvas::OnLeftMouseClick()
+    void Canvas::OnMouseLeftClick(Callback callback)
     {
-        std::cout << "clicked!\n";
+        m_Callback = callback;
+        //std::cout << "clicked!\n";
     }
 
 }

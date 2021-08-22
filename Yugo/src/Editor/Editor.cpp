@@ -1186,7 +1186,7 @@ namespace Yugo
 				m_SelectedSceneEntity = entt::null;
 
 			CreateGameWindow();
-			m_ScriptEngine->OnStart(m_GameWindow->m_Scene.get(), m_GameWindow.get());
+			m_ScriptEngine->OnStart(m_GameWindow->m_Scene.get(), m_GameWindow->m_UserInterface.get(), m_GameWindow.get());
 		}
 
 		ImGui::SameLine();
@@ -1411,9 +1411,18 @@ namespace Yugo
 		{
 			if (ImGui::BeginMenu("New"))
 			{
-				if (ImGui::MenuItem("Canvas")) CreateWidget("Canvas", node);
-				if (ImGui::MenuItem("Button")) CreateWidget("Button", node);
-				if (ImGui::MenuItem("Text"))   CreateWidget("Text", node);
+				//if (ImGui::MenuItem("Canvas")) CreateWidget("Canvas", node);
+				//if (ImGui::MenuItem("Button")) CreateWidget("Button", node);
+				//if (ImGui::MenuItem("Text"))   CreateWidget("Text", node);
+				if (ImGui::MenuItem("Entity"))
+				{
+					auto newEntity = m_Scene->CreateEntity();
+					auto& tag = newEntity.AddComponent<EntityTagComponent>();
+					tag.Name = "Entity" + std::to_string(static_cast<int>(newEntity.GetEnttEntity()));
+					auto& transform = newEntity.AddComponent<TransformComponent>();
+					auto& relationship = newEntity.AddComponent<RelationshipComponent>();
+					relationship.Parent = entt::null;
+				}
 
 				ImGui::EndMenu();
 			}

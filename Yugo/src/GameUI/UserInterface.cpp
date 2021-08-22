@@ -61,12 +61,12 @@ namespace Yugo
 			throw std::runtime_error("Could not initialize NanoVG");
 
 		// TODO: remove it later
-		Canvas* canvas = new Canvas();
-		canvas->SetParent(m_UserInterfaceTree->m_Root);
-		canvas->m_Position = glm::vec2(100.0f, 100.0f);
-		canvas->m_Size = glm::vec2(50.0f, 50.0f);
-		canvas->m_BackgroundColor = glm::vec4(1.0f, 0.5f, 0.3f, 0.5f);
-		AddWidget(canvas, m_UserInterfaceTree->m_Root);
+		//Canvas* canvas = new Canvas();
+		//canvas->SetParent(m_UserInterfaceTree->m_Root);
+		//canvas->m_Position = glm::vec2(100.0f, 100.0f);
+		//canvas->m_Size = glm::vec2(50.0f, 50.0f);
+		//canvas->m_BackgroundColor = glm::vec4(1.0f, 0.5f, 0.3f, 0.5f);
+		//AddWidget(canvas, m_UserInterfaceTree->m_Root);
 	}
 
 	void UserInterface::OnEvent(const Event& event)
@@ -79,7 +79,8 @@ namespace Yugo
 				auto mousePosition = UserInput::GetMousePosition();
 				Widget* intersectedWidget = m_UserInterfaceTree->CheckIntersectionWithMouse(mousePosition.first, mousePosition.second);
 				if (intersectedWidget)
-					intersectedWidget->OnLeftMouseClick();
+					intersectedWidget->m_Callback();
+					//intersectedWidget->OnMouseLeftClick();
 			}
 		}
 	}
@@ -104,6 +105,11 @@ namespace Yugo
 	{
 		// TODO: make it traverse...
 		m_UserInterfaceTree->m_Root->AddChild(widget);
+	}
+
+	Widget* UserInterface::GetRoot()
+	{
+		return m_UserInterfaceTree->m_Root;
 	}
 
 

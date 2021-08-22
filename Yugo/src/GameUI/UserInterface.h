@@ -23,6 +23,7 @@ namespace Yugo
 		void OnShutdown();
 
 		void AddWidget(Widget* widget, Widget* parent);
+		Widget* GetRoot();
 
 		int m_FramebufferWidth;
 		int m_FramebufferHeight;

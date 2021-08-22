@@ -15,6 +15,11 @@ namespace Yugo
 		m_Root->m_IsVisible = false;
 	}
 
+	UserInterfaceTree::~UserInterfaceTree()
+	{
+		delete m_Root;
+	}
+
 	void UserInterfaceTree::Update(TimeStep ts)
 	{
 	}

@@ -8,14 +8,23 @@ namespace Yugo
 	class Widget
 	{
 	public:
+		using Callback = std::function<void(void)>;
+		
+		enum Type
+		{
+			Canvas = 0,
+			Button,
+			Slider
+		};
+
 		Widget(Widget* parent = nullptr);
 		virtual ~Widget();
 
 		virtual void Draw(NVGcontext* ctx) = 0;
 		virtual void Update(TimeStep ts) = 0;
 
-		virtual void OnLeftMouseClick() {}
-		virtual void OnRightMouseClick() {}
+		virtual void OnMouseLeftClick(Callback callback) {}
+		virtual void OnMouseRightClick() {}
 		virtual void OnMouseHover() {}
 
 		void SetParent(Widget* parent);
@@ -32,7 +41,10 @@ namespace Yugo
 		
 		bool m_IsVisible = true;
 
+		Callback m_Callback;
+
 	protected:
+		Type m_Type;
 		Widget* m_Parent = nullptr;
 		std::vector<Widget*> m_Children;
 		std::string m_UniqueId;

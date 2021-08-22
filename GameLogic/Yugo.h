@@ -6,6 +6,7 @@
 #include "Input/KeyCodes.h"
 #include "Input/MouseCodes.h"
 #include "Scene/MouseRay.h"
+#include "GameUI/AllWidgets.h"
 
 namespace GameLogic
 {
@@ -27,5 +28,9 @@ namespace GameLogic
 
 	using KeyCode = Yugo::KeyCode;
 	using MouseCode = Yugo::MouseCode;
+
+	using Widget = Yugo::Widget;
+	using Canvas = Yugo::Canvas;
+	using Button = Yugo::Button;
 
 }

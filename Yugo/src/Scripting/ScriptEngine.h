@@ -25,6 +25,7 @@ namespace Yugo
 	typedef const char* (*GetScriptFilePath)(GameLogic::Script* script);
 	typedef void (*SetGameObject)(GameLogic::GameObject*, GameLogic::Script* script);
 	typedef void (*ImportGameEngineFuncs)(GameLogic::GameEngineFuncs);
+	typedef void (*ImportUiEngineFuncs)(GameLogic::UiEngineFuncs);
 	
 	class Editor;
 
@@ -47,9 +48,8 @@ namespace Yugo
 		friend class Editor;
 
 	public:
-		ScriptEngine();
 
-		void OnStart(Scene* scene, Window* window);
+		void OnStart(Scene* scene, UserInterface* ui, Window* window);
 		void OnUpdate(TimeStep ts);
 		void OnEvent(const Event& event);
 		void OnShutdown();
@@ -58,15 +58,18 @@ namespace Yugo
 
 		void AttachScript(const std::string& scriptFilePath, entt::entity entity);
 		void SetScene(Scene* scene);
+		void SetUserInterface(UserInterface* ui);
 
 	private:
 		HINSTANCE m_Lib;
 		GameLogic::ScriptArray m_ScriptArray;
-		Scene* m_Scene;
+		Scene* m_Scene = nullptr;
+		UserInterface* m_UserInterface = nullptr;
 		Window* m_Window;
 		std::vector<GameLogic::GameObject*> m_GameObjects;
 		std::unordered_map<std::string, entt::entity> m_ScriptEntityMap;
 
 		void BindGameEngineFunctionalities(GameLogic::GameEngineFuncs& gameEngineFuncs);
+		void BindUiEngineFunctionalities(GameLogic::UiEngineFuncs& uiEngineFuncs);
 	};
 }

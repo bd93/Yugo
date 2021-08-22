@@ -14,11 +14,11 @@ namespace Yugo
 
     Widget::~Widget()
     {
-        if (m_Parent)
-        {
-            delete m_Parent;
-            m_Parent = nullptr;
-        }
+        //if (m_Parent)
+        //{
+        //    delete m_Parent;
+        //    m_Parent = nullptr;
+        //}
 
         for (auto child : m_Children)
         {
