@@ -1,5 +1,7 @@
 #pragma once
 #include "Core/Core.h"
+#include "Input/KeyCodes.h"
+#include "Input/MouseCodes.h"
 
 class NVGcontext;
 namespace Yugo
@@ -8,7 +10,7 @@ namespace Yugo
 	class Widget
 	{
 	public:
-		using Callback = std::function<void(void)>;
+		//using Callback = std::function<void(void)>;
 		
 		enum Type
 		{
@@ -23,15 +25,20 @@ namespace Yugo
 		virtual void Draw(NVGcontext* ctx) = 0;
 		virtual void Update(TimeStep ts) = 0;
 
-		virtual void OnMouseLeftClick(Callback callback) {}
-		virtual void OnMouseRightClick() {}
+		virtual void OnMouseButtonClick(Yugo::MouseCode button) {};
+		virtual void OnKeyboardKeyPress(Yugo::KeyCode key) {};
+
+		//virtual void OnMouseLeftClick(Callback callback) {}
+		//virtual void OnMouseRightClick() {}
 		virtual void OnMouseHover() {}
+		virtual void OnMouseScroll() {}
 
 		void SetParent(Widget* parent);
 		void AddChild(Widget* child);
 
 		std::vector<Widget*>& GetChildren();
 		Widget* GetParent();
+		const Type GetType();
 
 		glm::vec2 m_Position = glm::vec2(50);
 		glm::vec2 m_Size = glm::vec2(50);
@@ -41,7 +48,7 @@ namespace Yugo
 		
 		bool m_IsVisible = true;
 
-		Callback m_Callback;
+		//Callback m_Callback;
 
 	protected:
 		Type m_Type;

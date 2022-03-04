@@ -16,6 +16,8 @@ namespace GameLogic
 
 		void OnMouseLeftClick() override;
 
+		void Move();
+
 	private:
 		GameObject m_Player;
 		GameObject m_Camera;

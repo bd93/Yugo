@@ -16,9 +16,13 @@ namespace GameLogic
 
 		void OnMouseLeftClick() override;
 
+		void SayHi();
+
 	private:
 		GameObject m_Player;
+		Script* m_PlayerScript;
 		Ray m_Ray;
+
 	};
 
 }

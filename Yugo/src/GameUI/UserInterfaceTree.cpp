@@ -29,7 +29,7 @@ namespace Yugo
 		TraverseDownFrom(m_Root, [&](Widget* widget) -> bool {
 			if (widget->m_IsVisible)
 				widget->Draw(ctx);
-			return true; // When false is always returned, the whole tree is traversed
+			return true;
 		});
 	}
 

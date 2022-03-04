@@ -47,4 +47,9 @@ namespace Yugo
         return m_Parent;
     }
 
+    const Widget::Type Widget::GetType()
+    {
+        return m_Type;
+    }
+
 }

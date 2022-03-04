@@ -9,6 +9,7 @@ namespace Yugo
     Canvas::Canvas(Widget* parent)
         : Widget(parent)
     {
+        m_Type = Widget::Type::Canvas;
     }
 
     Canvas::~Canvas()
@@ -41,10 +42,10 @@ namespace Yugo
     {
     }
 
-    void Canvas::OnMouseLeftClick(Callback callback)
-    {
-        m_Callback = callback;
-        //std::cout << "clicked!\n";
-    }
+    //void Canvas::OnMouseLeftClick(Callback callback)
+    //{
+    //    m_Callback = callback;
+    //    //std::cout << "clicked!\n";
+    //}
 
 }

@@ -163,7 +163,7 @@ namespace Yugo
 		}
 		ShowProjectWindow();
 
-		ImGui::ShowDemoWindow();  // ImGui demo window with all possible widgets/features
+		//ImGui::ShowDemoWindow();  // ImGui demo window with all possible widgets/features
 
 		// Render Scene in Game window when editor is in play mode
 		if (s_PlayMode)

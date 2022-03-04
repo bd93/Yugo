@@ -11,6 +11,7 @@
 #include "UserInterfaceTree.h"
 #include "Canvas.h" // TODO remove it later
 #include "Widget.h"
+#include "Core/FileSystem.h"
 
 #include <glad/glad.h>
 #include "nanovg/nanovg.h"
@@ -60,6 +61,23 @@ namespace Yugo
 		if (m_NVGContext == nullptr)
 			throw std::runtime_error("Could not initialize NanoVG");
 
+		// load fonts
+		int fontIcons = nvgCreateFont(m_NVGContext, "icons", (FileSystem::GetSolutionFolderPath() + "Yugo/vendor/nanovg/example/entypo.ttf").c_str());
+		if (fontIcons == -1)
+			printf("Could not add font icons.\n");
+		
+		int fontNormal = nvgCreateFont(m_NVGContext, "sans", (FileSystem::GetSolutionFolderPath() + "Yugo/vendor/nanovg/example/Roboto-Regular.ttf").c_str());
+		if (fontNormal == -1)
+			printf("Could not add font italic.\n");
+		
+		int fontBold = nvgCreateFont(m_NVGContext, "sans-bold", (FileSystem::GetSolutionFolderPath() + "Yugo/vendor/nanovg/example/Roboto-Bold.ttf").c_str());
+		if (fontBold == -1)
+			printf("Could not add font bold.\n");
+		
+		int fontEmoji = nvgCreateFont(m_NVGContext, "emoji", (FileSystem::GetSolutionFolderPath() + "Yugo/vendor/nanovg/example/NotoEmoji-Regular.ttf").c_str());
+		if (fontEmoji == -1)
+			printf("Could not add font emoji.\n");
+
 		// TODO: remove it later
 		//Canvas* canvas = new Canvas();
 		//canvas->SetParent(m_UserInterfaceTree->m_Root);
@@ -74,14 +92,23 @@ namespace Yugo
 		if (event.GetEventType() == EventType::MouseButtonPress)
 		{
 			const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
-			if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
-			{
-				auto mousePosition = UserInput::GetMousePosition();
-				Widget* intersectedWidget = m_UserInterfaceTree->CheckIntersectionWithMouse(mousePosition.first, mousePosition.second);
-				if (intersectedWidget)
-					intersectedWidget->m_Callback();
-					//intersectedWidget->OnMouseLeftClick();
+			auto mousePosition = UserInput::GetMousePosition();
+			Widget* intersectedWidget = m_UserInterfaceTree->CheckIntersectionWithMouse(mousePosition.first, mousePosition.second);
+			
+			if (intersectedWidget) {
+				if (intersectedWidget->GetType() == Widget::Button) {
+						intersectedWidget->OnMouseButtonClick(mouseButtonPress.GetButtonCode());
+				}
 			}
+			//const auto& mouseButtonPress = static_cast<const MouseButtonPress&>(event);
+			//if (mouseButtonPress.GetButtonCode() == MOUSE_BUTTON_LEFT)
+			//{
+			//	auto mousePosition = UserInput::GetMousePosition();
+			//	Widget* intersectedWidget = m_UserInterfaceTree->CheckIntersectionWithMouse(mousePosition.first, mousePosition.second);
+			//	if (intersectedWidget)
+			//		intersectedWidget->m_Callback();
+			//		//intersectedWidget->OnMouseLeftClick();
+			//}
 		}
 	}
 
@@ -104,7 +131,9 @@ namespace Yugo
 	void UserInterface::AddWidget(Widget* widget, Widget* parent)
 	{
 		// TODO: make it traverse...
-		m_UserInterfaceTree->m_Root->AddChild(widget);
+		//m_UserInterfaceTree->m_Root->AddChild(widget);
+		auto& children = parent->GetChildren();
+		children.push_back(widget);
 	}
 
 	Widget* UserInterface::GetRoot()

@@ -16,6 +16,8 @@
 namespace Yugo
 {
 
+	Entity s_CameraEntity; //temp
+
 	Scene::Scene()
 	{
 		//m_UserInterface = uPtrCreate<UserInterface>(this);
@@ -58,10 +60,11 @@ namespace Yugo
 
 		//m_UserInterface->OnStart();
 
-		auto cameraEntity = CreateEntity();
-		auto& transform = cameraEntity.AddComponent<TransformComponent>();
-		auto& camera = cameraEntity.AddComponent<CameraComponent>();
-		auto& tag = cameraEntity.AddComponent<EntityTagComponent>();
+		//auto cameraEntity = CreateEntity();
+		s_CameraEntity = CreateEntity();
+		auto& transform = s_CameraEntity.AddComponent<TransformComponent>();
+		auto& camera = s_CameraEntity.AddComponent<CameraComponent>();
+		auto& tag = s_CameraEntity.AddComponent<EntityTagComponent>();
 		tag.Name = "Main Camera";
 		Camera::OnStart(transform, camera);
 
@@ -209,30 +212,51 @@ namespace Yugo
 		{
 			const auto& name = entity["EntityTag"]["Name"];
 			const auto& assetFilePath = entity["EntityTag"]["AssetFilePath"];
-		
-			auto& [loadedMesh, loadedAnimation] = ModelImporter::LoadMeshFile(assetFilePath);
-
-			auto meshEntity = CreateEntity();
-
-			auto& entityTag = meshEntity.AddComponent<EntityTagComponent>(assetFilePath);
-			auto& mesh = meshEntity.AddComponent<MeshComponent>(*loadedMesh);
-			auto& transform = meshEntity.AddComponent<TransformComponent>();
-			meshEntity.AddComponent<BoundBoxComponent>(*loadedMesh);
-			if (loadedMesh->HasAnimation)
-				auto& animation = meshEntity.AddComponent<AnimationComponent>(*loadedAnimation);
 			
-			transform.Position = glm::vec3(entity["Position"]["x"], entity["Position"]["y"], entity["Position"]["z"]);
-			transform.Rotation = glm::vec3(entity["Rotation"]["x"], entity["Rotation"]["y"], entity["Rotation"]["z"]);
-			transform.Scale = glm::vec3(entity["Scale"]["x"], entity["Scale"]["y"], entity["Scale"]["z"]);
+			if (name == "Main Camera")
+			{
+				auto& transform = s_CameraEntity.GetComponent<TransformComponent>();
+				auto& camera = s_CameraEntity.GetComponent<CameraComponent>();
 
-			transform.ModelMatrix = glm::mat4(1.0f);
-			transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
-			transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-			transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-			transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-			transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
+				transform.Position = glm::vec3(entity["Position"]["x"], entity["Position"]["y"], entity["Position"]["z"]);
+				transform.Rotation = glm::vec3(entity["Rotation"]["x"], entity["Rotation"]["y"], entity["Rotation"]["z"]);
+				transform.Scale = glm::vec3(entity["Scale"]["x"], entity["Scale"]["y"], entity["Scale"]["z"]);
 
-			MeshRenderer::Submit(mesh);
+				transform.ModelMatrix = glm::mat4(1.0f);
+				transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
+				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+				transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
+				
+				Camera::OnStart(transform, camera);
+			}
+			else
+			{
+				auto& [loadedMesh, loadedAnimation] = ModelImporter::LoadMeshFile(assetFilePath);
+
+				auto meshEntity = CreateEntity();
+
+				auto& entityTag = meshEntity.AddComponent<EntityTagComponent>(assetFilePath);
+				auto& mesh = meshEntity.AddComponent<MeshComponent>(*loadedMesh);
+				auto& transform = meshEntity.AddComponent<TransformComponent>();
+				meshEntity.AddComponent<BoundBoxComponent>(*loadedMesh);
+				if (loadedMesh->HasAnimation)
+					auto& animation = meshEntity.AddComponent<AnimationComponent>(*loadedAnimation);
+			
+				transform.Position = glm::vec3(entity["Position"]["x"], entity["Position"]["y"], entity["Position"]["z"]);
+				transform.Rotation = glm::vec3(entity["Rotation"]["x"], entity["Rotation"]["y"], entity["Rotation"]["z"]);
+				transform.Scale = glm::vec3(entity["Scale"]["x"], entity["Scale"]["y"], entity["Scale"]["z"]);
+
+				transform.ModelMatrix = glm::mat4(1.0f);
+				transform.ModelMatrix = glm::translate(transform.ModelMatrix, transform.Position);
+				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+				transform.ModelMatrix = glm::rotate(transform.ModelMatrix, glm::radians(transform.Rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+				transform.ModelMatrix = glm::scale(transform.ModelMatrix, transform.Scale);
+
+				MeshRenderer::Submit(mesh);
+			}
 		}
 	}
 

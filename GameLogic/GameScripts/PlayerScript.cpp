@@ -33,6 +33,12 @@ namespace GameLogic
 		//auto [posX, posY] = Input::GetMousePosition();
 	}
 
+	void PlayerScript::Move()
+	{
+		auto& transform = m_GameObject.GetComponent<TransformComponent>();
+		transform.Position += glm::vec3(5.5f, 0.0f, 0.0f);
+	}
+
 
 
 	REGISTER_CLASS(PlayerScript, __FILE__)
