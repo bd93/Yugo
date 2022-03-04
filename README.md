@@ -2,7 +2,7 @@
 Yugo is a 3D game engine which is in early development phase.
 Screenshot:
 
-![Screenshot](Preview.png)
+![Screenshot](Preview.PNG)
 
 # Getting Started
 You can clone the repository using git:
